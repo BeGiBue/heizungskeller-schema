@@ -89,6 +89,9 @@ Diese Werte sind in der Karte vorgesehen, aber ohne Entität zeigt die Anzeige �
 
 ## Mobile Nutzung
 
+**iPad (Querformat):** Das breite Layout war höher als der Bildschirm, die untere Leiste wurde abgeschnitten. Seit 1.0.2 passt sich
+das breite Layout der Bildschirmhöhe an (`fit_screen`, `screen_offset`): `max-height` = Bildschirmhöhe minus Kopfzeile minus Abzug.
+
 Genutzt wird die Karte vor allem auf dem **Handy** und einem **7"-Raspberry-Display im Hochformat**
 (ca. 480 px breit), zusätzlich auf einem **13"-Tablet** (breites Layout).
 Für schmale Bildschirme wurde **Variante 3 „reduziert"** gewählt: Kerngeräte mit großen Zahlen

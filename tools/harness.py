@@ -74,7 +74,7 @@ MOCK_JS = """
 """
 
 
-def render(width, out, topic="", config=None, scale=2, pw=None):
+def render(width, out, topic="", config=None, scale=2, pw=None, height=None):
     from playwright.sync_api import sync_playwright
 
     states = {k: {"state": v[0], "attributes": {"unit_of_measurement": v[1]}} for k, v in STATES.items()}
@@ -86,7 +86,7 @@ def render(width, out, topic="", config=None, scale=2, pw=None):
     )
     with sync_playwright() as p:
         b = p.chromium.launch()
-        pg = b.new_page(viewport={"width": int(width), "height": 900}, device_scale_factor=scale)
+        pg = b.new_page(viewport={"width": int(width), "height": int(height or 900)}, device_scale_factor=scale)
         pg.on("pageerror", lambda e: print("PAGEERROR", str(e)[:400], file=sys.stderr))
         pg.set_content(html)
         pg.add_script_tag(content=js)
@@ -103,7 +103,7 @@ def render(width, out, topic="", config=None, scale=2, pw=None):
             "()=>{const s=window.__card.shadowRoot.querySelector('svg');return s.getAttribute('class')+' '+s.getAttribute('viewBox')}"
         )
         os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
-        pg.screenshot(path=out, full_page=True)
+        pg.screenshot(path=out, full_page=height is None)  # mit --height nur der sichtbare Bereich
         b.close()
     print(f"{out}  ({info})")
 
@@ -121,6 +121,7 @@ def trim(path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--width", type=int, default=1400)
+    ap.add_argument("--height", type=int, default=None, help="Fensterhöhe in px; dann nur der sichtbare Bereich (zeigt, ob die Karte ohne Scrollen passt)")
     ap.add_argument("--topic", default="", help="kompakte Ansicht: Bereich aufklappen (diagrams, gas, water, softener, settings, status, burner)")
     ap.add_argument("--out", default=os.path.join(ROOT, "tools", "out", "vorschau.png"))
     ap.add_argument("--layout", default="auto", choices=["auto", "wide", "compact"])
@@ -152,7 +153,7 @@ def main():
         print(f"{d}/vorschau-kompakt.png")
     else:
         cfg = {} if a.layout == "auto" else {"layout": a.layout}
-        render(a.width, a.out, a.topic, cfg)
+        render(a.width, a.out, a.topic, cfg, height=a.height)
 
 
 if __name__ == "__main__":

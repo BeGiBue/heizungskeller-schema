@@ -80,6 +80,24 @@ async ([states, layout, width]) => {
 """
 
 
+FIT_JS = """
+([states, config]) => {
+  document.body.style.width = '1100px';
+  const c = document.createElement('heizungsanlage-card');
+  c.setConfig(config);
+  document.body.appendChild(c);
+  c.hass = {states, language: 'de', callWS: async () => ({})};
+  const svg = c.shadowRoot.querySelector('svg');
+  const fields = customElements.get('heizungsanlage-card').getConfigElement();
+  document.body.appendChild(fields);
+  fields.hass = {language: 'de', states: {}};
+  fields.setConfig({});
+  const names = fields._form ? fields._form.schema.flatMap((s) => s.schema).map((x) => x.name) : [];
+  return {fit: svg.classList.contains('fit'), offset: svg.getAttribute('style'), names};
+}
+"""
+
+
 def main():
     from playwright.sync_api import sync_playwright
 
@@ -119,7 +137,7 @@ def main():
             pg2.add_script_tag(content=js)
             res = pg2.evaluate(LAYOUT_JS, [states, layout, width])
             tag = f"Layout {layout} @ {width}px"
-            check(f"{tag}: Klasse {cls}", res["cls"] == cls)
+            check(f"{tag}: Klasse {cls}", res["cls"].split()[0] == cls)
             check(f"{tag}: alle Elemente vorhanden" + (f" (fehlt: {res['ids']})" if res["ids"] else ""), not res["ids"])
             check(f"{tag}: Brenner-Animation aktiv", res["burnerOn"])
             check(f"{tag}: Box heißt 'Vorlauf' (nicht 'Heizkreis')", res["vorlauf"])
@@ -135,6 +153,19 @@ def main():
                 check(f"{tag}: 7 Detail-Schaltflächen", res["topics"] == 7)
                 check(f"{tag}: 3 Zähler/Geräte im Schema antippbar", res["meters"] == 3)
             pg2.close()
+        # Anpassung an die Bildschirmhöhe (breites Layout)
+        pg3 = b.new_page(viewport={"width": 1100, "height": 900})
+        pg3.on("pageerror", lambda e: errs.append(str(e)))
+        pg3.set_content("<html><body></body></html>")
+        pg3.add_script_tag(content="customElements.define('ha-form', class extends HTMLElement{});")
+        pg3.add_script_tag(content=js)
+        fit_default = pg3.evaluate(FIT_JS, [states, {"layout": "wide"}])
+        fit_off = pg3.evaluate(FIT_JS, [states, {"layout": "wide", "fit_screen": False}])
+        fit_off32 = pg3.evaluate(FIT_JS, [states, {"layout": "wide", "screen_offset": 80}])
+        check("Breites Layout passt sich standardmäßig der Bildschirmhöhe an", fit_default["fit"] and "--fit-offset:32px" in fit_default["offset"])
+        check("fit_screen: false schaltet die Anpassung ab", not fit_off["fit"])
+        check("screen_offset wird übernommen", "--fit-offset:80px" in fit_off32["offset"])
+        check("Editor bietet fit_screen und screen_offset an", "fit_screen" in fit_default["names"] and "screen_offset" in fit_default["names"])
         check("Keine JavaScript-Fehler im Browser", not errs)
         if errs:
             print(errs)

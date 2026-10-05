@@ -1,6 +1,6 @@
 {
   "name": "heizungskeller-schema",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Home-Assistant-Karte: animiertes Anlagenschema einer Gas-Heizung",
   "private": true,
   "scripts": {

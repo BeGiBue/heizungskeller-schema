@@ -79,11 +79,17 @@ Die Karte wählt ihr Layout nach der verfügbaren Breite (Einstellung **Layout**
 
 Mit `layout: wide` oder `layout: compact` lässt sich das Layout fest vorgeben.
 
+Im breiten Layout wird das Schema auf die Bildschirmhöhe verkleinert, damit es z. B. auf dem iPad im Querformat ohne Scrollen
+vollständig zu sehen ist (`fit_screen`, standardmäßig an). Der Abzug für Kopfzeile und Ränder lässt sich mit `screen_offset`
+(Pixel, Standard 32) anpassen; mit `fit_screen: false` wird die Anpassung abgeschaltet.
+
 ## YAML-Konfiguration (optional)
 
 ```yaml
 type: custom:heizungsanlage-card
 layout: auto              # auto | wide | compact
+fit_screen: true          # breites Layout auf die Bildschirmhöhe verkleinern (kein Scrollen)
+screen_offset: 32          # Abzug von der Bildschirmhöhe in px
 title: Heizungsanlage
 subtitle: Viessmann Vitocrossal 300 & Vitocell 100-V
 tank_range: [20, 65]      # Temperaturbereich der Füllanzeige im Speicher (°C)

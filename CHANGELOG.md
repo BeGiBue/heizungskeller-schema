@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2
+
+- Breites Layout: Das Schema passt sich der Bildschirmhöhe an und wird ohne Scrollen vollständig angezeigt, z. B. auf dem iPad
+  im Querformat (vorher war die untere Leiste abgeschnitten). Neue Optionen `fit_screen` (Standard an) und `screen_offset`
+  (Abzug für Kopfzeile und Ränder in px, Standard 32), auch im Karteneditor.
+- Vorschau-Werkzeug: `tools/harness.py --height` zeigt nur den sichtbaren Bereich, um die Passung ohne Scrollen zu prüfen.
+
 ## 1.0.1
 
 - Layout Anpassungen

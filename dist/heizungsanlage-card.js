@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '1.0.1';
+const CARD_VERSION = '1.0.2';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -54,6 +54,8 @@ const PUMP_INNER = (() => {
 
 const DEFAULTS = {
   layout: 'auto', // auto = nach Breite, wide = breites Schema, compact = Handy-Ansicht
+  fit_screen: true, // breites Layout auf die Bildschirmhöhe verkleinern (kein Scrollen, z. B. iPad im Querformat)
+  screen_offset: 32, // Abzug von der Bildschirmhöhe in px (zusätzlich zur Kopfzeile von Home Assistant)
   title: 'Heizungsanlage',
   subtitle: 'Viessmann Vitocrossal 300 & Vitocell 100-V',
   tank_range: [20, 65], // Temperaturbereich für die Füllanzeige des Speichers
@@ -214,6 +216,11 @@ class HeizungsanlageCard extends HTMLElement {
       .wrap { overflow-x: auto; }
       svg { width:100%; height:auto; display:block; }
       svg.wide { min-width:700px; }
+      /* Breites Layout höchstens so hoch wie der sichtbare Bildschirm (abzüglich Kopfzeile und Rand) */
+      svg.wide.fit {
+        max-height: max(480px, calc(100vh - var(--header-height, 56px) - env(safe-area-inset-top, 0px) - var(--fit-offset, 32px)));
+        max-height: max(480px, calc(100dvh - var(--header-height, 56px) - env(safe-area-inset-top, 0px) - var(--fit-offset, 32px)));
+      }
       text { font-family: var(--paper-font-body1_-_font-family, Roboto, "Segoe UI", sans-serif);
              fill: var(--primary-text-color); font-size: 20px; }
       .s  { fill: var(--secondary-text-color); font-size: 18px; }
@@ -383,7 +390,7 @@ class HeizungsanlageCard extends HTMLElement {
         .join('');
 
     return `
-<svg class="wide" viewBox="0 0 1400 1150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Heizungsanlage">
+<svg class="wide${cfg.fit_screen !== false ? ' fit' : ''}" style="--fit-offset:${Number.isFinite(Number(cfg.screen_offset)) ? Number(cfg.screen_offset) : 32}px" viewBox="0 0 1400 1150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Heizungsanlage">
   <defs>
     ${['red', 'orange', 'blue', 'yellow']
       .map(
@@ -1193,6 +1200,8 @@ const EDITOR_I18N = {
     layoutOptions: { auto: 'Automatisch (nach Breite)', wide: 'Breit (Schema)', compact: 'Kompakt (Handy / Hochformat)' },
     labels: {
       layout: 'Layout',
+      fit_screen: 'An Bildschirmhöhe anpassen',
+      screen_offset: 'Abzug von der Bildschirmhöhe',
       title: 'Titel',
       subtitle: 'Untertitel',
       e_outside_temp: 'Außentemperatur',
@@ -1228,6 +1237,8 @@ const EDITOR_I18N = {
       e_softener_salt: 'Salz (%)',
     },
     helpers: {
+      fit_screen: 'Breites Layout: Das Schema wird so verkleinert, dass es ohne Scrollen auf den Bildschirm passt (z. B. iPad im Querformat).',
+      screen_offset: 'Platz für Kopfzeile und Ränder in px. Erhöhen, wenn unten noch etwas abgeschnitten wird.',
       e_tank_min_target: 'Graue Grenzlinie im Diagramm = dieser Wert minus Abstand',
       e_tank_max_target: 'Graue Grenzlinie im Diagramm = dieser Wert plus Abstand',
       tank_range_min: 'Temperatur, bei der der Speicher in der Grafik „leer" ist',
@@ -1255,6 +1266,8 @@ const EDITOR_I18N = {
     layoutOptions: { auto: 'Automatic (by width)', wide: 'Wide (diagram)', compact: 'Compact (phone / portrait)' },
     labels: {
       layout: 'Layout',
+      fit_screen: 'Fit to screen height',
+      screen_offset: 'Deduction from screen height',
       title: 'Title',
       subtitle: 'Subtitle',
       e_outside_temp: 'Outside temperature',
@@ -1290,6 +1303,8 @@ const EDITOR_I18N = {
       e_softener_salt: 'Salt (%)',
     },
     helpers: {
+      fit_screen: 'Wide layout: shrinks the diagram so that it fits on the screen without scrolling (e.g. iPad in landscape).',
+      screen_offset: 'Space for the header and margins in px. Increase if something at the bottom is still cut off.',
       e_tank_min_target: 'Grey limit line in the chart = this value minus offset',
       e_tank_max_target: 'Grey limit line in the chart = this value plus offset',
       tank_range_min: 'Temperature at which the tank graphic shows "empty"',
@@ -1352,6 +1367,8 @@ class HeizungsanlageCardEditor extends HTMLElement {
               },
             },
           },
+          { name: 'fit_screen', selector: { boolean: {} } },
+          { name: 'screen_offset', selector: { number: { mode: 'box', min: 0, max: 400, step: 1, unit_of_measurement: 'px' } } },
         ],
       },
       {
@@ -1439,6 +1456,8 @@ class HeizungsanlageCardEditor extends HTMLElement {
     const range = Array.isArray(cfg.tank_range) ? cfg.tank_range : DEFAULTS.tank_range;
     const data = {
       layout: cfg.layout || DEFAULTS.layout,
+      fit_screen: cfg.fit_screen !== undefined ? cfg.fit_screen : DEFAULTS.fit_screen,
+      screen_offset: cfg.screen_offset !== undefined ? cfg.screen_offset : DEFAULTS.screen_offset,
       title: cfg.title !== undefined ? cfg.title : DEFAULTS.title,
       subtitle: cfg.subtitle !== undefined ? cfg.subtitle : DEFAULTS.subtitle,
       tank_range_min: range[0],
@@ -1459,6 +1478,8 @@ class HeizungsanlageCardEditor extends HTMLElement {
       else cfg[key] = val;
     };
     setOrDrop('layout', d.layout, DEFAULTS.layout);
+    setOrDrop('fit_screen', d.fit_screen, DEFAULTS.fit_screen);
+    setOrDrop('screen_offset', d.screen_offset, DEFAULTS.screen_offset);
     setOrDrop('title', d.title, DEFAULTS.title);
     setOrDrop('subtitle', d.subtitle, DEFAULTS.subtitle);
     setOrDrop('limit_offset', d.limit_offset, DEFAULTS.limit_offset);
