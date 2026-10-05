@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '1.0.0';
+const CARD_VERSION = '1.0.1';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -21,6 +21,18 @@ const IMG = {
 };
 
 const C = { red: '#e53935', orange: '#fb8c00', blue: '#1e88e5', yellow: '#fbc02d' };
+
+// Umrechnungsfaktoren in die Anzeige-Einheit (Schlüssel: Einheit der Entität, kleingeschrieben)
+const UNIT_FACTORS = {
+  'm³': { 'm³': 1, m3: 1, l: 0.001, ml: 0.000001 },
+  'l/h': { 'l/h': 1, 'm³/h': 1000, 'm3/h': 1000, 'l/min': 60, 'ml/min': 0.06, 'l/s': 3600, 'm³/min': 60000, 'm3/min': 60000, 'm³/s': 3600000, 'm3/s': 3600000 },
+};
+
+// Wert als zwei Textelemente: Zahl (rechtsbündig) und Einheit (linksbündig). Alle Elemente einer Gruppe (data-ug)
+// bekommen in _alignUnits() dieselbe Einheiten-Spalte, so stehen die Einheiten einer Box linksbündig untereinander.
+const numUnit = (id, group, x, y, style = '') =>
+  `<text class="v" id="${id}" data-ug="${group}" data-uid="${id}-u" data-r="${x}" x="${x}" y="${y}" text-anchor="end" style="${style}">–</text>` +
+  `<text class="v" id="${id}-u" x="${x}" y="${y}" text-anchor="start" style="${style}"></text>`;
 
 // Gezeichnete Umwälzpumpe (Achse = y 0), wird in der kompakten Ansicht skaliert verwendet
 const PUMP_INNER = (() => {
@@ -301,13 +313,14 @@ class HeizungsanlageCard extends HTMLElement {
 
     const infoBox = (x, y, w, title, rows, ent) => {
       const h = 46 + rows.length * 32;
+      const gid = `ib-${x}-${y}`;
       let s = `<g><rect class="box" x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>
         <text class="h" x="${x + 14}" y="${y + 31}">${title}</text>`;
       rows.forEach((r, i) => {
         const yy = y + 64 + i * 32;
         s += `<g class="clk" data-entity="${r.ent || ent || ''}">
           <text class="s" x="${x + 14}" y="${yy}">${r.label}</text>
-          <text class="v" id="${r.id}" x="${x + w - 14}" y="${yy}" text-anchor="end">–</text></g>`;
+          ${numUnit(r.id, gid, x + w - 14, yy)}</g>`;
       });
       return s + '</g>';
     };
@@ -415,7 +428,7 @@ class HeizungsanlageCard extends HTMLElement {
     ${imgTag('rad', 1180, 262, 170)}
     <rect id="rad-heat" x="1182" y="264" width="136" height="112" rx="5" fill="#e53935" opacity="0"/>
     <rect class="box" x="1190" y="392" width="180" height="44" rx="12"/>
-    <text class="s" x="1204" y="420">Heizkreis</text>
+    <text class="s" x="1204" y="420">Vorlauf</text>
     <text class="v" id="v-supply" x="1356" y="420" text-anchor="end">–</text>
   </g>
 
@@ -443,9 +456,9 @@ class HeizungsanlageCard extends HTMLElement {
     <g id="chart-burner"></g>
   </g>
   <g class="clk" data-entity="${E.burner_modulation || ''}">
-    <text class="v" id="v-mod" x="710" y="741" text-anchor="end" style="font-size:21px;fill:#e08a00">–</text></g>
+    ${numUnit('v-mod', 'burner', 710, 741, 'font-size:21px;fill:#e08a00')}</g>
   <g class="clk" data-entity="${E.boiler_temp || ''}">
-    <text class="v" id="v-boiler" x="710" y="783" text-anchor="end" style="font-size:21px;fill:#e53935">–</text></g>
+    ${numUnit('v-boiler', 'burner', 710, 783, 'font-size:21px;fill:#e53935')}</g>
 
   <!-- ================= Ladepumpe ================= -->
   ${pump('chg', 689, 500, E.charge_pump)}
@@ -487,14 +500,14 @@ class HeizungsanlageCard extends HTMLElement {
 
   <!-- ================= Kaltwasser-Temperatur ================= -->
   ${E.water_temp ? `<g class="clk" data-entity="${E.water_temp}">
-    <rect class="box" x="20" y="768" width="185" height="38" rx="12"/>
+    <rect class="box" x="20" y="768" width="205" height="38" rx="12"/>
     <text class="s" x="32" y="793" style="font-size:16px">Kaltwasser</text>
-    <text class="v" id="v-cold" x="193" y="793" text-anchor="end" style="font-size:17px">–</text></g>` : ''}
+    <text class="v" id="v-cold" x="213" y="793" text-anchor="end" style="font-size:17px">–</text></g>` : ''}
 
   <!-- ================= Verlauf Speichertemperatur ================= -->
   <g class="clk" data-entity="${E.tank_temp || ''}">
     <rect class="box" x="950" y="686" width="312" height="152" rx="14"/>
-    <text class="v" id="v-tank" x="1248" y="761" text-anchor="end" style="font-size:24px">–</text>
+    ${numUnit('v-tank', 'tank', 1248, 761, 'font-size:24px')}
     <g id="chart"></g>
   </g>
 
@@ -603,7 +616,7 @@ class HeizungsanlageCard extends HTMLElement {
     s += `<g class="clk" data-topic="softener">${img('soft', sx.toFixed(2), sy.toFixed(2), sw.toFixed(2))}
       <text x="${tx}" y="${ty}" transform="rotate(-90 ${tx} ${ty})" text-anchor="middle" dominant-baseline="central" textLength="${(75 * sk).toFixed(1)}" lengthAdjust="spacingAndGlyphs" style="font-size:${(23.2 * sk).toFixed(1)}px;font-weight:500;fill:#2f86e6;pointer-events:none">AQMOS</text></g>`;
     s += `<g class="clk" data-topic="water">${img('wm', 496, 506, 96)}</g>`;
-    s += valChip(455, 142, 110, 'Heizkreis', 'v-supply', E.supply_temp);
+    s += valChip(455, 142, 110, 'Vorlauf', 'v-supply', E.supply_temp);
     s += valChip(118, 384, 110, 'Kessel', 'v-boiler', E.boiler_temp, '#e53935');
     s += valChip(266, 384, 110, 'Speicher', 'v-tank', E.tank_temp);
     s += valChip(266, 466, 110, 'Kaltwasser', 'v-cold', E.water_temp);
@@ -644,7 +657,7 @@ class HeizungsanlageCard extends HTMLElement {
       let t = tile(10, y, 580, h) + `<text class="h" x="24" y="${y + 30}">${title}</text>` + img(key, 590 - w2 - 14, y + 6, w2);
       rows.forEach((r, i) => {
         const yy = y + 84 + i * 30;
-        t += `<g class="clk" data-entity="${r[3] || ''}"><text class="s" x="24" y="${yy}">${r[0]}</text><text class="v" id="${r[1]}" x="576" y="${yy}" text-anchor="end">–</text></g>`;
+        t += `<g class="clk" data-entity="${r[3] || ''}"><text class="s" x="24" y="${yy}">${r[0]}</text>${numUnit(r[1], 'it-' + title, 576, yy)}</g>`;
       });
       return t;
     };
@@ -661,13 +674,13 @@ class HeizungsanlageCard extends HTMLElement {
         `<text class="h" x="24" y="${py + 30}">Brenner</text>
          <text class="s" x="574" y="${py + 30}" text-anchor="end" style="font-size:14px"><tspan style="fill:#e08a00">● Modulation</tspan><tspan dx="14" style="fill:#e53935">● Kesseltemperatur</tspan></text>
          <g class="clk" data-entity="${E.boiler_temp || ''}"><g id="chart-burner" data-x0="${g1.x0}" data-x1="${g1.x1}" data-y0="${g1.y0}" data-y1="${g1.y1}"></g></g>
-         <g class="clk" data-entity="${E.burner_modulation || ''}"><text class="v" id="v-mod" x="574" y="${py + 90}" text-anchor="end" style="font-size:24px;fill:#e08a00">–</text></g>
-         <g class="clk" data-entity="${E.boiler_temp || ''}"><text class="v" id="v-boiler-d" x="574" y="${py + 128}" text-anchor="end" style="font-size:24px;fill:#e53935">–</text></g>` +
+         <g class="clk" data-entity="${E.burner_modulation || ''}">${numUnit('v-mod', 'burner', 574, py + 90, 'font-size:24px;fill:#e08a00')}</g>
+         <g class="clk" data-entity="${E.boiler_temp || ''}">${numUnit('v-boiler-d', 'burner', 574, py + 128, 'font-size:24px;fill:#e53935')}</g>` +
         tile(10, t2, 580, th) +
         `<text class="h" x="24" y="${t2 + 30}">Warmwasserspeicher</text>
          <text class="s" x="574" y="${t2 + 30}" text-anchor="end" style="font-size:14px"><tspan style="fill:#fb8c00">··· Soll</tspan><tspan dx="14" style="fill:#8e8e93">– – Grenzwerte</tspan></text>
          <g class="clk" data-entity="${E.tank_temp || ''}"><g id="chart" data-x0="${g2.x0}" data-x1="${g2.x1}" data-y0="${g2.y0}" data-y1="${g2.y1}" data-xr="574"></g>
-         <text class="v" id="v-tank-d" x="574" y="${t2 + 103}" text-anchor="end" style="font-size:26px">–</text></g>`;
+         ${numUnit('v-tank-d', 'tank', 574, t2 + 103, 'font-size:26px')}</g>`;
 
     } else if (open === 'gas') {
       ph = 130;
@@ -752,7 +765,16 @@ class HeizungsanlageCard extends HTMLElement {
     return !!s && s.state === 'on';
   }
 
+  // Liter-Symbol: kleines, vom großen I unterscheidbares ℓ statt "L"/"l" (z. B. "177 L" → "177 ℓ", "12 l/h" → "12 ℓ/h")
+  _liter(txt) {
+    return String(txt).replace(/(^|[\s\d])[Ll](?=$|[\s/])/g, '$1ℓ');
+  }
+
   _fmt(id, max = 1, min = 0) {
+    return this._liter(this._fmt0(id, max, min));
+  }
+
+  _fmt0(id, max = 1, min = 0) {
     const s = this._st(id);
     if (!s || s.state === 'unavailable' || s.state === 'unknown') return '–';
     const n = parseFloat(s.state);
@@ -773,6 +795,18 @@ class HeizungsanlageCard extends HTMLElement {
     return unit ? `${txt} ${unit}` : txt;
   }
 
+  // Wert einer Entität aus ihrer Einheit in die Anzeige-Einheit umrechnen (z. B. L → m³, m³/h → l/h).
+  // Gibt null zurück, wenn die Entität fehlt/nicht verfügbar ist oder die Einheit unbekannt ist.
+  _convertTo(id, target) {
+    const st = this._st(id);
+    if (!st || st.state === 'unavailable' || st.state === 'unknown') return null;
+    const n = parseFloat(st.state);
+    if (isNaN(n)) return null;
+    const unit = ((st.attributes && st.attributes.unit_of_measurement) || '').trim().toLowerCase();
+    const f = (UNIT_FACTORS[target] || {})[unit];
+    return f == null ? null : n * f;
+  }
+
   _unitOf(id) {
     if (!id) return '';
     const s = this._st(id);
@@ -781,6 +815,10 @@ class HeizungsanlageCard extends HTMLElement {
   }
 
   _fmtVal(n, unit, max = 1, min = 0) {
+    return this._liter(this._fmtVal0(n, unit, max, min));
+  }
+
+  _fmtVal0(n, unit, max = 1, min = 0) {
     if (n == null || isNaN(n)) return '–';
     const lang = (this._hass.locale && this._hass.locale.language) || this._hass.language || 'de';
     const txt = n.toLocaleString(lang, { minimumFractionDigits: min, maximumFractionDigits: max });
@@ -855,7 +893,14 @@ class HeizungsanlageCard extends HTMLElement {
       // schreibt in <id> und, falls vorhanden, in die Detail-Anzeige <id>-d
       [id, id + '-d'].forEach((i) => {
         const el = $(i);
-        if (el && el.textContent !== txt) el.textContent = txt;
+        if (!el) return;
+        if (el.dataset.uid) {
+          // Zahl und Einheit getrennt (Einheiten linksbündig untereinander, siehe _alignUnits)
+          const { n, u } = this._splitUnit(txt);
+          if (el.textContent !== n) el.textContent = n;
+          const ue = $(el.dataset.uid);
+          if (ue && ue.textContent !== u) ue.textContent = u;
+        } else if (el.textContent !== txt) el.textContent = txt;
       });
     };
     const tog = (id, v) => {
@@ -881,9 +926,12 @@ class HeizungsanlageCard extends HTMLElement {
     const waterId = this._ids.water;
     setT('v-gas-total', gasId ? this._fmt(gasId, 2) : '–');
     setT('v-gas-today', E.gas_today ? this._fmt(E.gas_today, 2) : this._fmtVal(this._energy.gasToday, this._unitOf(gasId), 2));
-    setT('v-water-total', waterId ? this._fmt(waterId, 0) : '–');
+    // Wasserzähler: Stand in m³ mit 2 Nachkommastellen, Durchfluss in l/h (Sensorwerte werden umgerechnet)
+    const waterTotal = waterId ? this._convertTo(waterId, 'm³') : null;
+    setT('v-water-total', waterId ? (waterTotal != null ? this._fmtVal(waterTotal, 'm³', 2, 2) : this._fmt(waterId, 0)) : '–');
     setT('v-water-today', E.water_today ? this._fmt(E.water_today, 0) : this._fmtVal(this._energy.waterToday, this._unitOf(waterId), 0));
-    setT('v-water-flow', this._fmt(E.water_flow, 1));
+    const waterFlow = E.water_flow ? this._convertTo(E.water_flow, 'l/h') : null;
+    setT('v-water-flow', E.water_flow ? (waterFlow != null ? this._fmtVal(waterFlow, 'ℓ/h', 1, 0) : this._fmt(E.water_flow, 1)) : '–');
     setT('v-cold', this._fmt(E.water_temp, 1, 1));
     setT('v-soft-regen', this._fmt(E.softener_regeneration, 0));
     setT('v-soft-salt', this._fmt(E.softener_salt, 0));
@@ -934,6 +982,34 @@ class HeizungsanlageCard extends HTMLElement {
 
     this._drawChart();
     this._drawBurnerChart();
+    this._alignUnits();
+  }
+
+  // "58,0 °C" -> { n: '58,0', u: '°C' }; Werte ohne Einheit (z. B. "–") bleiben ganz in n
+  _splitUnit(txt) {
+    const t = String(txt);
+    const m = /^(.*\S)\s+(\S+)$/.exec(t);
+    if (m && /[^\d.,+\-–\s]/.test(m[2])) return { n: m[1], u: m[2] };
+    return { n: t, u: '' };
+  }
+
+  // Einheiten-Spalte je Gruppe (data-ug) bestimmen: breiteste Einheit bestimmt die Spalte,
+  // alle Einheiten stehen linksbündig untereinander, die Zahlen rechtsbündig davor
+  _alignUnits() {
+    const root = this.shadowRoot;
+    if (!root) return;
+    const groups = {};
+    root.querySelectorAll('[data-ug]').forEach((el) => {
+      (groups[el.dataset.ug] = groups[el.dataset.ug] || []).push(el);
+    });
+    Object.values(groups).forEach((nums) => {
+      const units = nums.map((el) => root.getElementById(el.dataset.uid)).filter(Boolean);
+      const R = parseFloat(nums[0].dataset.r);
+      const maxW = Math.max(0, ...units.map((u) => (u.textContent ? u.getComputedTextLength() : 0)));
+      const ux = R - maxW;
+      units.forEach((u) => u.setAttribute('x', ux.toFixed(1)));
+      nums.forEach((el) => el.setAttribute('x', (maxW ? ux - 5 : R).toFixed(1)));
+    });
   }
 
   /* ---------- Verlauf ---------- */
@@ -1080,10 +1156,19 @@ class HeizungsanlageCard extends HTMLElement {
     s += `<circle cx="${sx(pMin.t).toFixed(1)}" cy="${sy(pMin.v).toFixed(1)}" r="3.5" fill="#1e88e5" stroke="#fff" stroke-width="1.2"/>`;
     const unit = this._unitOf(E.tank_temp) || '°C';
     const XR = D.xr ? +D.xr : 1248;
-    s += `<text class="v" x="${XR}" y="${Y0 + 14}" text-anchor="end" style="font-size:16px;fill:#e53935">${this._fmtVal(pMax.v, unit, 1, 1)}</text>`;
-    s += `<text class="v" x="${XR}" y="${Y1}" text-anchor="end" style="font-size:16px;fill:#1e88e5">${this._fmtVal(pMin.v, unit, 1, 1)}</text>`;
+    const pair = (id, y, color, v) => {
+      const { n, u } = this._splitUnit(this._fmtVal(v, unit, 1, 1));
+      const st = `font-size:16px;fill:${color}`;
+      return (
+        `<text class="v" id="${id}" data-ug="tank" data-uid="${id}-u" data-r="${XR}" x="${XR}" y="${y}" text-anchor="end" style="${st}">${n}</text>` +
+        `<text class="v" id="${id}-u" x="${XR}" y="${y}" text-anchor="start" style="${st}">${u}</text>`
+      );
+    };
+    s += pair('ch-max', Y0 + 14, '#e53935', pMax.v);
+    s += pair('ch-min', Y1, '#1e88e5', pMin.v);
     s += `<text class="tick" x="${X0}" y="${Y1 + 20}">–24 h</text><text class="tick" x="${X1}" y="${Y1 + 20}" text-anchor="end">jetzt</text>`;
     g.innerHTML = s;
+    this._alignUnits();
   }
 }
 
@@ -1117,7 +1202,7 @@ const EDITOR_I18N = {
       e_burner_active: 'Brenner aktiv',
       e_burner_modulation: 'Brenner-Modulation',
       e_boiler_temp: 'Kesseltemperatur',
-      e_supply_temp: 'Heizkreis (Vorlauftemperatur)',
+      e_supply_temp: 'Vorlauftemperatur',
       e_heating_pump: 'Heizkreispumpe',
       e_charge_pump: 'Ladepumpe',
       e_dhw_circ_pump: 'Zirkulationspumpe Warmwasser',
@@ -1179,7 +1264,7 @@ const EDITOR_I18N = {
       e_burner_active: 'Burner active',
       e_burner_modulation: 'Burner modulation',
       e_boiler_temp: 'Boiler temperature',
-      e_supply_temp: 'Heating circuit (supply temperature)',
+      e_supply_temp: 'Supply temperature',
       e_heating_pump: 'Heating circuit pump',
       e_charge_pump: 'Charge pump',
       e_dhw_circ_pump: 'Hot water circulation pump',

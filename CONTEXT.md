@@ -78,8 +78,13 @@ Diese Werte sind in der Karte vorgesehen, aber ohne Entität zeigt die Anzeige �
 - **Untere Leiste** in zwei Zeilen: Status (Außentemperatur, Frostschutz, Brennerstunden, Brennerstarts) und
   Einstellungen (Komfort, Normal, Reduziert, Warmwasser Soll, Verschiebung, Steigung).
 - Tafel der Enthärtungsanlage (Regeneration, Salz %) ist immer sichtbar; Schriftzug „AQMOS".
-- Kaltwassertemperatur steht über dem Wasserzähler. Titel groß, oben möglichst wenig Leerraum.
-- Das Feld unter dem Heizkörper heißt **„Heizkreis"** (zeigt die Vorlauftemperatur `supply_temp`).
+- Kaltwassertemperatur steht über dem Wasserzähler, die Box ist so breit wie die Wasserzähler-Box (breites Layout).
+- **Versionsnummer:** vom Nutzer auf **1.0.1** festgelegt (Zählung neu begonnen; vorherige interne Stände 3.x entfallen). Ab hier hochzählen.
+- **Liter-Symbol:** ℓ (U+2113) statt „L"/„l", damit es von einem großen I unterscheidbar ist (z. B. „177 ℓ", „12 ℓ/h").
+- **Einheiten in Boxen mit mehreren Zahlenwerten** (Gas, Wasser, Enthärtung, Brenner-Werte, Speicher-Werte): Zahl rechtsbündig,
+  Einheit linksbündig, alle Einheiten einer Box untereinander in einer Spalte (`numUnit`, `_alignUnits`).
+- Wasserzähler: **Stand in m³ mit 2 Nachkommastellen**, **Durchfluss in ℓ/h**. Die Sensoren des Nutzers liefern Liter (`wasserzahler_total`) und m³/h (`wasserzahler_flow`); die Karte rechnet um (`UNIT_FACTORS`, `_convertTo`). „Heute" bleibt unverändert (Einheit aus dem Energie-Dashboard, z. B. L). Titel groß, oben möglichst wenig Leerraum.
+- Das Feld unter dem Heizkörper heißt **„Vorlauf"** (zeigt `supply_temp`; zwischenzeitlich „Heizkreis", auf Wunsch wieder „Vorlauf" in allen Karten und Boxen).
 - Alle Einstellungen laufen über den visuellen Editor von Home Assistant (`ha-form`).
 
 ## Mobile Nutzung
@@ -87,11 +92,11 @@ Diese Werte sind in der Karte vorgesehen, aber ohne Entität zeigt die Anzeige �
 Genutzt wird die Karte vor allem auf dem **Handy** und einem **7"-Raspberry-Display im Hochformat**
 (ca. 480 px breit), zusätzlich auf einem **13"-Tablet** (breites Layout).
 Für schmale Bildschirme wurde **Variante 3 „reduziert"** gewählt: Kerngeräte mit großen Zahlen
-(Heizkreis, Kessel, Speicher, Kaltwasser), alle Details hinter Schaltflächen (Akkordeon, immer nur ein Bereich
+(Vorlauf, Kessel, Speicher, Kaltwasser), alle Details hinter Schaltflächen (Akkordeon, immer nur ein Bereich
 offen). Anordnung: Zeile 1 Diagramme, Status, Einstellungen; Zeile 2 Brenner, Gas, Wasser, Enthärtung;
 die Schaltflächen sind pro Zeile gleich breit.
 Im kompakten Schema sind alle drei Pumpen gleich groß (Größe der Ladepumpe), die Heizkreispumpe sitzt senkrecht
-über der Ladepumpe. Die vier Werte-Boxen (Heizkreis, Kessel, Speicher, Kaltwasser) haben dieselbe Größe (110×52)
+über der Ladepumpe. Die vier Werte-Boxen (Vorlauf, Kessel, Speicher, Kaltwasser) haben dieselbe Größe (110×52)
 und dieselben Schriftgrößen (Beschriftung 13, Wert 20): Speicher- und Kaltwasser-Box sind gleich breit und senkrecht mittig übereinander,
 die Kessel-Box steht horizontal mittig zur Speicher-Box (gleiche Mittellinie).
 Im kompakten Layout sind die Abstände Überschrift → Schema und Schema → Details gleich groß (je ca. 27 Einheiten,

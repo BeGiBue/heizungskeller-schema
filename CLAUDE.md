@@ -15,7 +15,8 @@ keine externen Requests). HACS lädt genau diese Datei.
    bearbeiten oder umformatieren**; Bilder werden mit `tools/images.py` getauscht.
 2. Nach jeder Änderung: `npm run check` (Syntax) und `npm test` (Editor + beide Layouts), danach die Vorschau in
    **beiden Layouts** ansehen (`npm run preview`, siehe unten) und das Ergebnis prüfen, bevor committet wird.
-3. `CARD_VERSION` (Zeile 11) hochzählen: Patch für Layout/Texte, Minor für neue Funktionen.
+3. `CARD_VERSION` (Zeile 11) und `package.json` hochzählen: Patch für Layout/Texte, Minor für neue Funktionen. Der Nutzer hat
+   die Version auf **1.0.1** festgelegt, die Zählung läuft ab dort weiter.
 4. Ändern sich Verhalten, Optionen oder Design-Entscheidungen, `README.md` und `CONTEXT.md` mitpflegen.
 5. Texte in der Karte sind **deutsch**; der Editor ist deutsch **und** englisch (`EDITOR_I18N`).
 6. Native Home-Assistant-Mittel verwenden: `ha-form`-Editor, `hass-more-info` bei Klick auf Werte,
@@ -56,7 +57,7 @@ Wasserzähler `22,823 w120`, Enthärtung `263,789 w80`. Pumpen (Achse y): Heizkr
 Zirkulation `(1125,500)`. Leitungen: Heizkreis-Vorlauf y290, -Rücklauf y355; Ladekreis/Zirkulation Vorlauf y500,
 Rücklauf y600; Kaltwasser-Hauptleitung y860 mit Abzweigen bei x410 (Kessel, mittig), x923 (Speicher, mittig)
 und x1284 (Hahn). Boxen: Brenner `434,686 290×152`, Speicher `950,686 312×152` (gleiche Oberkante/Höhe, Speicherbox
-ist Referenz), Gas `20,572`, Wasser `20,912`, Enthärtung `360,912`, Heizkreis-Feld `1190,392`, Kaltwasser-Feld
+ist Referenz), Gas `20,572`, Wasser `20,912`, Enthärtung `360,912`, Vorlauf-Feld `1190,392`, Kaltwasser-Feld
 `20,768`. Untere Leiste `y1080–1232` (Status- und Einstellungszeile).
 
 **Kompakt** (`_svgNarrow`): Schema in `translate(0,100)`: Kessel `30,170 w150`, Speicher `335,183 w100`, Heizkörper
@@ -68,6 +69,11 @@ Detailbereich ab y854. Die Höhe der `viewBox` hängt vom geöffneten Thema ab.
 - **Animationen** hängen an der CSS-Klasse `on`: `<g class="line" id="ln-…">`, `<g class="pump" id="pm-…">`,
   `#boiler`, `#drops`. `_update()` setzt die Klasse anhand der Entitäten (Tabelle in `README.md`).
   Neue Animation = Element mit ID + CSS-Regel unter `.…on` + Zeile in `_update()`.
+- **Einheiten:** Wasserstand wird in m³ (2 Nachkommastellen), Durchfluss in ℓ/h angezeigt; `_convertTo(id, ziel)` rechnet
+  über `UNIT_FACTORS` aus der Einheit der Entität um (unbekannte Einheit → unveränderte Anzeige). Neue Einheit = Eintrag dort.
+- **Zahl + Einheit:** Werte in Boxen mit mehreren Zahlenwerten werden mit `numUnit(id, gruppe, x, y, style)` erzeugt (zwei
+  Textelemente). `setT` trennt Text per `_splitUnit`, `_alignUnits()` richtet die Einheiten einer Gruppe linksbündig
+  untereinander aus. Liter immer mit **ℓ** (`_liter`), nie mit „L" oder „l".
 - **Texte setzen** über `setT(id, text)`; schreibt zusätzlich in das Element `<id>-d` (kompakte Ansicht zeigt
   einige Werte zugleich im Schema und im Detailbereich).
 - **Klickbar** ist alles mit `data-entity="…"` (öffnet den Home-Assistant-Dialog). Leere Entität = nicht klickbar.
@@ -106,7 +112,5 @@ Die Vorschau nutzt Testdaten (siehe `tools/harness.py`) – kein echtes Home Ass
 
 ## Veröffentlichen
 
-Version erhöhen (`CARD_VERSION` und `package.json`), Abschnitt `## X.Y.Z` in `CHANGELOG.md` ergänzen, Doku abgleichen,
-`npm run check` + `npm test`, committen und auf `main` pushen. Der Workflow `.github/workflows/release.yml` legt dann
-Tag `vX.Y.Z` und GitHub-Release (Notes aus `CHANGELOG.md`, Anhang `dist/heizungsanlage-card.js`) automatisch an
-(siehe `.claude/commands/release.md`).
+Version erhöhen, Doku abgleichen, `npm run check` + `npm test`, committen. Für ein HACS-Release auf GitHub einen
+Tag/Release `vX.Y.Z` mit der Datei `dist/heizungsanlage-card.js` anlegen (siehe `.claude/commands/release.md`).

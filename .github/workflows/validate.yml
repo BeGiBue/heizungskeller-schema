@@ -1,15 +1,7 @@
 name: Validate
 
-# Läuft nur, wenn sich etwas für HACS oder die Karte Relevantes ändert (kein täglicher Lauf,
-# damit keine wiederkehrenden Benachrichtigungs-Mails entstehen). Manuell über "Run workflow" startbar.
 on:
   push:
-    branches: [main]
-    paths:
-      - 'dist/**'
-      - 'hacs.json'
-      - 'README.md'
-      - '.github/workflows/validate.yml'
   pull_request:
   workflow_dispatch:
 
@@ -18,7 +10,7 @@ jobs:
     name: HACS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - name: HACS validation
         uses: hacs/action@main
         with:
@@ -28,8 +20,8 @@ jobs:
     name: JavaScript-Syntax
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: node --check dist/heizungsanlage-card.js

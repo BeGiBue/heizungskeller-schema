@@ -17,6 +17,8 @@ Gas- und Wasserzähler, Enthärtungsanlage – mit Live-Werten und Verläufen.
 - **Pumpen mit drehendem Flügelrad**, solange sie laufen.
 - **Brenner:** Flamme im Sichtfenster, Größe folgt der Modulation. Darunter ein 24-h-Graph mit Modulation und Kesseltemperatur.
 - **Warmwasserspeicher:** Füllanzeige, 24-h-Verlauf mit Soll-Linie, zwei grauen Grenzlinien sowie Maximum, Istwert und Minimum.
+- **Einheiten umgerechnet:** Der Wasserzähler zeigt den Stand in m³ mit zwei Nachkommastellen und den Durchfluss in ℓ/h, egal in welcher Einheit der Sensor liefert (L, m³; m³/h, l/min, l/h …). Liter werden mit dem Symbol ℓ geschrieben, damit es nicht mit einem großen I verwechselt wird.
+- **Einheiten linksbündig:** In Boxen mit mehreren Zahlenwerten stehen die Einheiten linksbündig untereinander, die Zahlen rechtsbündig davor.
 - **Gas und Wasser aus dem Energie-Dashboard** (Stand und Tagesverbrauch), ohne zusätzliche Konfiguration.
 - **Kompakte Ansicht** für Handy und kleine Hochformat-Displays mit aufklappbaren Details.
 - **Untere Leiste:** Status (Außentemperatur, Frostschutz, Brennerstunden, Brennerstarts) und Einstellungen (Heizkurve, Temperaturen).
@@ -25,14 +27,6 @@ Gas- und Wasserzähler, Enthärtungsanlage – mit Live-Werten und Verläufen.
 ## Installation
 
 ### Über HACS (empfohlen)
-
-Mit einem Klick (über My Home Assistant öffnet sich das Repository direkt in HACS deiner Home-Assistant-Instanz):
-
-[![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=BeGiBue&repository=heizungskeller-schema&category=plugin)
-
-Danach „Herunterladen" wählen und den Browser-Cache leeren (bzw. die App neu laden).
-
-Oder von Hand:
 
 1. HACS öffnen → Menü (⋮) → **Benutzerdefinierte Repositories**.
 2. URL `https://github.com/BeGiBue/heizungskeller-schema` eintragen, Kategorie **Dashboard** wählen.
@@ -70,7 +64,7 @@ Die Karte wählt ihr Layout nach der verfügbaren Breite (Einstellung **Layout**
 - **Breit** (ab ca. 700 px, z. B. Tablet oder Desktop): vollständiges Schema mit allen Geräten,
   Diagrammen, Datenboxen und der unteren Leiste.
 - **Kompakt** (unter ca. 700 px, z. B. Handy oder 7"-Display im Hochformat): Kerngeräte mit großen Zahlen
-  (Heizkreis, Kessel, Speicher, Kaltwasser) sowie Gaszähler (links unten), Wasserzähler (rechts unten) und
+  (Vorlauf, Kessel, Speicher, Kaltwasser) sowie Gaszähler (links unten), Wasserzähler (rechts unten) und
   Enthärtungsanlage im Schema. Ein Tipp auf ein Gerät öffnet den passenden Bereich darunter. Alle weiteren Werte stehen hinter Schaltflächen:
   *Diagramme*, *Status*, *Einstellungen* (erste Zeile) sowie *Brenner*, *Gas*, *Wasser* und *Enthärtung* (zweite Zeile).
   Ein Tipp klappt den jeweiligen Bereich unter den Schaltflächen auf, ein zweiter Tipp schließt ihn.

@@ -39,20 +39,41 @@ async () => {
 """
 
 LAYOUT_JS = """
-([states, layout, width]) => {
+async ([states, layout, width]) => {
   document.body.style.width = width + 'px';
   const c = document.createElement('heizungsanlage-card');
   c.setConfig(layout === 'auto' ? {} : {layout});
   document.body.appendChild(c);
-  c.hass = {states, language: 'de', callWS: async () => ({})};
+  c.hass = {states, language: 'de', callWS: async (m) => {
+    if (m.type === 'energy/get_prefs') return {device_consumption_water: [{stat_consumption: 'sensor.wasserzahler_total'}]};
+    if (m.type === 'recorder/statistics_during_period') return {[m.statistic_ids[0]]: [{change: 177}]};
+    if (m.type === 'recorder/get_statistics_metadata') return [{display_unit_of_measurement: 'L'}];
+    return {};
+  }};
+  await new Promise((res) => setTimeout(res, 150)); // Energie-Dashboard-Abfrage abwarten
   const r = c.shadowRoot;
   const has = (id) => !!r.getElementById(id);
+  // Zahl und Einheit eines Wertes (getrennte Textelemente) zusammensetzen
+  const val = (id) => {
+    const n = r.getElementById(id), u = r.getElementById(id + '-u');
+    return n ? (n.textContent + (u && u.textContent ? ' ' + u.textContent : '')) : null;
+  };
+  const ux = (ids) => ids.map((id) => { const u = r.getElementById(id + '-u'); return u ? u.getAttribute('x') : null; });
+  const nx = (ids) => ids.map((id) => { const n = r.getElementById(id); return n ? n.getAttribute('x') : null; });
+  const water = ['v-water-today', 'v-water-total', 'v-water-flow'];
   return {
     cls: r.querySelector('svg').getAttribute('class'),
     ids: ['boiler', 'tank-hot', 'pm-heat', 'pm-chg', 'pm-circ', 'ln-heat-f', 'ln-cold', 'flame', 'v-supply', 'v-tank', 'v-cold'].filter((i) => !has(i)),
     topics: r.querySelectorAll('.btn[data-topic]').length,
     meters: r.querySelectorAll('g[data-topic]:not(.btn)').length,
-    heizkreis: r.textContent.includes('Heizkreis'),
+    vorlauf: r.textContent.includes('Vorlauf') && !r.textContent.includes('Heizkreis'),
+    wt: val('v-water-total'),
+    wf: val('v-water-flow'),
+    wh: val('v-water-today'),
+    waterUx: ux(water),
+    waterNx: nx(water),
+    burnerUx: ux(['v-mod', 'v-boiler']),
+    tankUx: ux(['v-tank', 'ch-max', 'ch-min']),
     burnerOn: r.getElementById('boiler').classList.contains('on'),
   };
 }
@@ -101,7 +122,15 @@ def main():
             check(f"{tag}: Klasse {cls}", res["cls"] == cls)
             check(f"{tag}: alle Elemente vorhanden" + (f" (fehlt: {res['ids']})" if res["ids"] else ""), not res["ids"])
             check(f"{tag}: Brenner-Animation aktiv", res["burnerOn"])
-            check(f"{tag}: 'Heizkreis' statt 'Vorlauf'", res["heizkreis"])
+            check(f"{tag}: Box heißt 'Vorlauf' (nicht 'Heizkreis')", res["vorlauf"])
+            if cls == "wide":
+                check(f"{tag}: Wasserzähler-Stand in m³ mit 2 Nachkommastellen (L → m³)", res["wt"] == "539,95 m³")
+                check(f"{tag}: Durchfluss in ℓ/h (m³/h → ℓ/h)", res["wf"] == "12 ℓ/h")
+                check(f"{tag}: Liter-Symbol ℓ statt L", res["wh"] == "177 ℓ")
+                same = lambda a: len(set(a)) == 1 and a[0] is not None
+                check(f"{tag}: Wasserzähler-Box: Einheiten linksbündig untereinander", same(res["waterUx"]))
+                check(f"{tag}: Wasserzähler-Box: Zahlen rechtsbündig vor der Einheitenspalte", same(res["waterNx"]))
+                check(f"{tag}: Brenner-Box: Einheiten linksbündig untereinander", same(res["burnerUx"]))
             if cls == "narrow":
                 check(f"{tag}: 7 Detail-Schaltflächen", res["topics"] == 7)
                 check(f"{tag}: 3 Zähler/Geräte im Schema antippbar", res["meters"] == 3)

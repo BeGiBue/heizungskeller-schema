@@ -35,8 +35,8 @@ STATES = {
     "number.vscotho1_72_reduzierte_temperatur": ("18", "°C"),
     "number.vscotho1_72_steigung_der_heizkurve": ("1.1", ""),
     "number.vscotho1_72_verschiebung_der_heizkurve": ("0", "°C"),
-    "sensor.wasserzahler_flow": ("3.2", "L/min"),
-    "sensor.wasserzahler_total": ("539777", "L"),
+    "sensor.wasserzahler_flow": ("0.012", "m³/h"),   # wie beim Nutzer: Durchfluss in m³/h
+    "sensor.wasserzahler_total": ("539954", "L"),    # Stand in Litern
     "sensor.wasserzahler_water_temperature": ("12.4", "°C"),
     "sensor.vicare_hot_water_min_temperature": ("45", "°C"),
     "sensor.vicare_hot_water_max_temperature": ("60", "°C"),
@@ -55,8 +55,8 @@ MOCK_JS = """
       if (m.type === 'energy/get_prefs') return {
         energy_sources: [{type: 'gas', stat_energy_from: 'sensor.gas_zaehler'}],
         device_consumption_water: [{stat_consumption: 'sensor.wasserzahler_total'}]};
-      if (m.type === 'recorder/statistics_during_period') return {[m.statistic_ids[0]]: [{change: 1.8}, {change: 0.9}]};
-      if (m.type === 'recorder/get_statistics_metadata') return [{display_unit_of_measurement: 'm³'}];
+      if (m.type === 'recorder/statistics_during_period') return {[m.statistic_ids[0]]: m.statistic_ids[0].includes('wasser') ? [{change: 100}, {change: 77}] : [{change: 1.8}, {change: 0.9}]};
+      if (m.type === 'recorder/get_statistics_metadata') return [{display_unit_of_measurement: m.statistic_ids[0].includes('wasser') ? 'L' : 'm³'}];
       const now = Date.now() / 1000, out = {};
       m.entity_ids.forEach((id) => {
         out[id] = Array.from({length: 144}, (_, i) => {
