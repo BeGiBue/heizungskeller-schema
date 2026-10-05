@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '3.1.3';
+const CARD_VERSION = '3.2.0';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -583,21 +583,29 @@ class HeizungsanlageCard extends HTMLElement {
     s += line('chg-f', 'M184,245 H331', 'red') + line('chg-r', 'M335,325 H186', 'orange');
     s += line('circ-f', 'M437,245 H540', 'red') + line('circ-r', 'M540,300 H515 V325 H437', 'orange');
     s += line('cold-b', 'M250,450 H105 V347', 'blue') + line('cold', 'M250,450 H560 V318', 'blue');
-    s += line('cold-t', 'M385,450 V384', 'blue') + line('cold-in', 'M250,545 V454', 'blue');
+    s += line('cold-t', 'M385,450 V384', 'blue') + line('cold-in', 'M494,535 H250 V454', 'blue');
+    s += line('gas', 'M58,490 V347', 'yellow');
     s += `<g class="clk" data-entity="${E.supply_temp || ''}">${img('rad', 440, 52, 140)}<rect id="rad-heat" x="441" y="53" width="112" height="92" rx="4" fill="#e53935" opacity="0"/></g>`;
     s += pump('heat', 300, 80, 0.7, E.heating_pump) + pump('chg', 257, 245, 0.6, E.charge_pump) + pump('circ', 488, 245, 0.55, E.dhw_circ_pump);
     s += boiler(30, 170, 150) + tank(335, 183, 100) + tap(540, 245, 0.85);
+    s += `<g class="clk" data-topic="gas">${img('gas', 12, 484, 92)}
+      <text class="s" x="58" y="588" text-anchor="middle" style="font-size:13px">Gaszähler</text></g>`;
+    s += `<g class="clk" data-topic="softener">${img('soft', 400, 496, 44)}
+      <text x="419" y="542" transform="rotate(-90 419 542)" text-anchor="middle" dominant-baseline="central" textLength="31" lengthAdjust="spacingAndGlyphs" style="font-size:9.6px;font-weight:500;fill:#2f86e6;pointer-events:none">AQMOS</text>
+      <text class="s" x="422" y="588" text-anchor="middle" style="font-size:13px">Enthärtung</text></g>`;
+    s += `<g class="clk" data-topic="water">${img('wm', 496, 506, 96)}
+      <text class="s" x="544" y="588" text-anchor="middle" style="font-size:13px">Wasserzähler</text></g>`;
     s += valChip(440, 160, 140, 'Heizkreis', 'v-supply', E.supply_temp);
     s += valChip(118, 350, 112, 'Kessel', 'v-boiler', E.boiler_temp, '#e53935');
     s += valChip(276, 384, 100, '', 'v-tank', E.tank_temp);
     s += `<g class="clk" data-entity="${E.water_temp || ''}">
-      <rect class="box" x="160" y="548" width="180" height="34" rx="10"/>
-      <text class="s" x="172" y="570" style="font-size:14px">Kaltwasser</text>
-      <text class="v" id="v-cold" x="328" y="571" text-anchor="end" style="font-size:16px">–</text></g>`;
+      <rect class="box" x="266" y="470" width="110" height="48" rx="10"/>
+      <text class="s" x="276" y="488" style="font-size:13px">Kaltwasser</text>
+      <text class="v" id="v-cold" x="276" y="509" style="font-size:18px">–</text></g>`;
     s += '</g>';
 
     // ---- Detail-Schaltflächen ----
-    const by = 730;
+    const by = 736;
     const topics = {
       diagrams: ['Diagramme', 10, by + 4, 138],
       gas: ['Gas', 158, by + 4, 98],

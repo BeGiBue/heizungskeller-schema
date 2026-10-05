@@ -50,7 +50,8 @@ LAYOUT_JS = """
   return {
     cls: r.querySelector('svg').getAttribute('class'),
     ids: ['boiler', 'tank-hot', 'pm-heat', 'pm-chg', 'pm-circ', 'ln-heat-f', 'ln-cold', 'flame', 'v-supply', 'v-tank', 'v-cold'].filter((i) => !has(i)),
-    topics: r.querySelectorAll('[data-topic]').length,
+    topics: r.querySelectorAll('.btn[data-topic]').length,
+    meters: r.querySelectorAll('g[data-topic]:not(.btn)').length,
     heizkreis: r.textContent.includes('Heizkreis'),
     burnerOn: r.getElementById('boiler').classList.contains('on'),
   };
@@ -103,6 +104,7 @@ def main():
             check(f"{tag}: 'Heizkreis' statt 'Vorlauf'", res["heizkreis"])
             if cls == "narrow":
                 check(f"{tag}: 7 Detail-Schaltflächen", res["topics"] == 7)
+                check(f"{tag}: 3 Zähler/Geräte im Schema antippbar", res["meters"] == 3)
             pg2.close()
         check("Keine JavaScript-Fehler im Browser", not errs)
         if errs:

@@ -62,7 +62,8 @@ Die Karte wählt ihr Layout nach der verfügbaren Breite (Einstellung **Layout**
 - **Breit** (ab ca. 700 px, z. B. Tablet oder Desktop): vollständiges Schema mit allen Geräten,
   Diagrammen, Datenboxen und der unteren Leiste.
 - **Kompakt** (unter ca. 700 px, z. B. Handy oder 7"-Display im Hochformat): Kerngeräte mit großen Zahlen
-  (Heizkreis, Kessel, Speicher, Kaltwasser). Alle weiteren Werte stehen hinter Schaltflächen:
+  (Heizkreis, Kessel, Speicher, Kaltwasser) sowie Gaszähler (links unten), Wasserzähler (rechts unten) und
+  Enthärtungsanlage im Schema. Ein Tipp auf ein Gerät öffnet den passenden Bereich darunter. Alle weiteren Werte stehen hinter Schaltflächen:
   *Diagramme*, *Gas*, *Wasser*, *Enthärtung*, *Einstellungen*, *Status* und *Brenner-Details*.
   Ein Tipp klappt den jeweiligen Bereich unter den Schaltflächen auf, ein zweiter Tipp schließt ihn.
 
