@@ -6,5 +6,7 @@ Bereite eine neue Version vor und veröffentliche sie.
    (Patch für Layout/Texte, Minor für neue Funktionen). Gewünschte Nummer vom Nutzer: $ARGUMENTS
 3. Führe `npm run check` und `npm test` aus. Bei Fehlern nicht fortfahren.
 4. Erzeuge bei Design-Änderungen die Vorschaubilder in `docs/` neu (`python3 tools/harness.py --docs`).
-5. Committe mit einer aussagekräftigen deutschen Nachricht, pushe und lege (wenn gewünscht) einen Release `vX.Y.Z`
-   mit der Datei `dist/heizungsanlage-card.js` als Anhang an.
+5. Ergänze in `CHANGELOG.md` oben einen Abschnitt `## X.Y.Z` mit den Änderungen (daraus werden die Release-Notes).
+6. Committe mit einer aussagekräftigen deutschen Nachricht und pushe auf `main`. Der Workflow
+   `.github/workflows/release.yml` legt dann automatisch Tag `vX.Y.Z` und das GitHub-Release mit
+   `dist/heizungsanlage-card.js` als Anhang an (nur wenn es für diese Version noch kein Release gibt).

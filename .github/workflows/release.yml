@@ -1,9 +1,11 @@
 name: Release
 
+# Legt für die Version aus package.json automatisch Tag und GitHub-Release an,
+# sobald diese Version auf main liegt und noch kein Release dafür existiert.
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,19 +19,33 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node --check dist/heizungsanlage-card.js
-      - name: Versionen prüfen
+      - name: Version ermitteln
+        id: v
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          grep -q "const CARD_VERSION = '${TAG}';" dist/heizungsanlage-card.js || { echo "CARD_VERSION passt nicht zu ${GITHUB_REF_NAME}"; exit 1; }
-          grep -q "\"version\": \"${TAG}\"" package.json || { echo "package.json passt nicht zu ${GITHUB_REF_NAME}"; exit 1; }
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          grep -q "const CARD_VERSION = '${VERSION}';" dist/heizungsanlage-card.js || { echo "CARD_VERSION passt nicht zu package.json (${VERSION})"; exit 1; }
+          if gh release view "v${VERSION}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release v${VERSION} existiert bereits."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Syntax prüfen
+        if: steps.v.outputs.exists == 'false'
+        run: node --check dist/heizungsanlage-card.js
       - name: Release-Notes aus CHANGELOG.md
+        if: steps.v.outputs.exists == 'false'
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          awk -v v="## ${TAG}" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
-          test -s notes.md || echo "Release ${GITHUB_REF_NAME}" > notes.md
+          awk -v v="## ${{ steps.v.outputs.version }}" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          test -s notes.md || echo "Release v${{ steps.v.outputs.version }}" > notes.md
       - uses: softprops/action-gh-release@v2
+        if: steps.v.outputs.exists == 'false'
         with:
-          name: ${{ github.ref_name }}
+          tag_name: v${{ steps.v.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: v${{ steps.v.outputs.version }}
           body_path: notes.md
           files: dist/heizungsanlage-card.js
