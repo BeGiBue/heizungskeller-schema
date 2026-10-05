@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '3.2.0';
+const CARD_VERSION = '3.2.5';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -571,50 +571,58 @@ class HeizungsanlageCard extends HTMLElement {
         </g></g>`;
     };
 
+    // Einheitliche Werte-Boxen im Schema: gleiche Höhe und Schriftgrößen (Beschriftung 13, Wert 20)
     const valChip = (x, y, w, label, id, ent, col) =>
       `<g class="clk" data-entity="${ent || ''}">
          <rect class="box" x="${x}" y="${y}" width="${w}" height="52" rx="10"/>
-         ${label ? `<text class="s" x="${x + 10}" y="${y + 17}" style="font-size:13px">${label}</text>` : ''}
-         <text class="v" id="${id}" x="${x + 10}" y="${y + (label ? 42 : 34)}" style="font-size:22px;${col ? 'fill:' + col : ''}">–</text></g>`;
+         <text class="s" x="${x + 10}" y="${y + 17}" style="font-size:13px">${label}</text>
+         <text class="v" id="${id}" x="${x + 10}" y="${y + 42}" style="font-size:20px;${col ? 'fill:' + col : ''}">–</text></g>`;
 
     // ---- Schema ----
-    let s = `<g transform="translate(0,100)">`;
-    s += line('heat-f', 'M75,175 V80 H436', 'red') + line('heat-r', 'M436,140 H135 V176', 'orange');
+    const SY = 73; // Abstand Überschrift → Schema (= Abstand Schema → Details = halber früherer Abstand)
+    let s = `<g transform="translate(0,${SY})">`;
+    s += line('heat-f', 'M75,175 V64 H436', 'red') + line('heat-r', 'M436,124 H135 V176', 'orange');
     s += line('chg-f', 'M184,245 H331', 'red') + line('chg-r', 'M335,325 H186', 'orange');
     s += line('circ-f', 'M437,245 H540', 'red') + line('circ-r', 'M540,300 H515 V325 H437', 'orange');
     s += line('cold-b', 'M250,450 H105 V347', 'blue') + line('cold', 'M250,450 H560 V318', 'blue');
     s += line('cold-t', 'M385,450 V384', 'blue') + line('cold-in', 'M494,535 H250 V454', 'blue');
     s += line('gas', 'M58,490 V347', 'yellow');
-    s += `<g class="clk" data-entity="${E.supply_temp || ''}">${img('rad', 440, 52, 140)}<rect id="rad-heat" x="441" y="53" width="112" height="92" rx="4" fill="#e53935" opacity="0"/></g>`;
-    s += pump('heat', 300, 80, 0.7, E.heating_pump) + pump('chg', 257, 245, 0.6, E.charge_pump) + pump('circ', 488, 245, 0.55, E.dhw_circ_pump);
+    s += `<g class="clk" data-entity="${E.supply_temp || ''}">${img('rad', 440, 36, 140)}<rect id="rad-heat" x="441" y="37" width="112" height="92" rx="4" fill="#e53935" opacity="0"/></g>`;
+    s += pump('heat', 257, 64, 0.6, E.heating_pump) + pump('chg', 257, 245, 0.6, E.charge_pump) + pump('circ', 488, 245, 0.6, E.dhw_circ_pump);
     s += boiler(30, 170, 150) + tank(335, 183, 100) + tap(540, 245, 0.85);
     s += `<g class="clk" data-topic="gas">${img('gas', 12, 484, 92)}
-      <text class="s" x="58" y="588" text-anchor="middle" style="font-size:13px">Gaszähler</text></g>`;
-    s += `<g class="clk" data-topic="softener">${img('soft', 400, 496, 44)}
-      <text x="419" y="542" transform="rotate(-90 419 542)" text-anchor="middle" dominant-baseline="central" textLength="31" lengthAdjust="spacingAndGlyphs" style="font-size:9.6px;font-weight:500;fill:#2f86e6;pointer-events:none">AQMOS</text>
-      <text class="s" x="422" y="588" text-anchor="middle" style="font-size:13px">Enthärtung</text></g>`;
-    s += `<g class="clk" data-topic="water">${img('wm', 496, 506, 96)}
-      <text class="s" x="544" y="588" text-anchor="middle" style="font-size:13px">Wasserzähler</text></g>`;
-    s += valChip(440, 160, 140, 'Heizkreis', 'v-supply', E.supply_temp);
-    s += valChip(118, 350, 112, 'Kessel', 'v-boiler', E.boiler_temp, '#e53935');
-    s += valChip(276, 384, 100, '', 'v-tank', E.tank_temp);
-    s += `<g class="clk" data-entity="${E.water_temp || ''}">
-      <rect class="box" x="266" y="470" width="110" height="48" rx="10"/>
-      <text class="s" x="276" y="488" style="font-size:13px">Kaltwasser</text>
-      <text class="v" id="v-cold" x="276" y="509" style="font-size:18px">–</text></g>`;
+</g>`;
+    // Enthärtung: 15 % größer als zuvor (Breite 44), Mitte und Unterkante (y = 574) bleiben unverändert
+    const sw = 44 * 1.15;
+    const sh = +((sw * IMG.soft.h) / IMG.soft.w).toFixed(1); // gerundet wie in img()
+    const sx = 422 - sw / 2;
+    const sy = 496 + +((44 * IMG.soft.h) / IMG.soft.w).toFixed(1) - sh;
+    const sk = sw / IMG.soft.w; // Maßstab des Beschriftungs-Overlays
+    const tx = (sx + 46.5 * sk).toFixed(1);
+    const ty = (sy + 109.5 * sk).toFixed(1);
+    s += `<g class="clk" data-topic="softener">${img('soft', sx.toFixed(2), sy.toFixed(2), sw.toFixed(2))}
+      <text x="${tx}" y="${ty}" transform="rotate(-90 ${tx} ${ty})" text-anchor="middle" dominant-baseline="central" textLength="${(75 * sk).toFixed(1)}" lengthAdjust="spacingAndGlyphs" style="font-size:${(23.2 * sk).toFixed(1)}px;font-weight:500;fill:#2f86e6;pointer-events:none">AQMOS</text></g>`;
+    s += `<g class="clk" data-topic="water">${img('wm', 496, 506, 96)}</g>`;
+    s += valChip(455, 142, 110, 'Heizkreis', 'v-supply', E.supply_temp);
+    s += valChip(118, 384, 110, 'Kessel', 'v-boiler', E.boiler_temp, '#e53935');
+    s += valChip(266, 384, 110, 'Speicher', 'v-tank', E.tank_temp);
+    s += valChip(266, 466, 110, 'Kaltwasser', 'v-cold', E.water_temp);
     s += '</g>';
 
     // ---- Detail-Schaltflächen ----
-    const by = 736;
-    const topics = {
-      diagrams: ['Diagramme', 10, by + 4, 138],
-      gas: ['Gas', 158, by + 4, 98],
-      water: ['Wasser', 266, by + 4, 118],
-      softener: ['Enthärtung', 394, by + 4, 196],
-      settings: ['Einstellungen', 10, by + 60, 178],
-      status: ['Status', 198, by + 60, 128],
-      burner: ['Brenner-Details', 336, by + 60, 254],
-    };
+    const by = 690; // Abstand Schema → Details (gleich groß wie Überschrift → Schema)
+    // Zeile 1: Diagramme, Status, Einstellungen · Zeile 2: Brenner, Gas, Wasser, Enthärtung (je Zeile gleich breit)
+    const topicRows = [
+      [['diagrams', 'Diagramme'], ['status', 'Status'], ['settings', 'Einstellungen']],
+      [['burner', 'Brenner'], ['gas', 'Gas'], ['water', 'Wasser'], ['softener', 'Enthärtung']],
+    ];
+    const topics = {};
+    topicRows.forEach((row, r) => {
+      const w = (580 - (row.length - 1) * 10) / row.length;
+      row.forEach(([key, label], i) => {
+        topics[key] = [label, +(10 + i * (w + 10)).toFixed(2), by + 4 + r * 56, +w.toFixed(2)];
+      });
+    });
     s += `<text class="s" x="14" y="${by - 6}" style="font-size:15px">Details</text>`;
     Object.entries(topics).forEach(([key, [label, x, y, w]]) => {
       const on = open === key;

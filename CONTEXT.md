@@ -88,7 +88,14 @@ Genutzt wird die Karte vor allem auf dem **Handy** und einem **7"-Raspberry-Disp
 (ca. 480 px breit), zusätzlich auf einem **13"-Tablet** (breites Layout).
 Für schmale Bildschirme wurde **Variante 3 „reduziert"** gewählt: Kerngeräte mit großen Zahlen
 (Heizkreis, Kessel, Speicher, Kaltwasser), alle Details hinter Schaltflächen (Akkordeon, immer nur ein Bereich
-offen): Diagramme, Gas, Wasser, Enthärtung, Einstellungen, Status, Brenner-Details.
+offen). Anordnung: Zeile 1 Diagramme, Status, Einstellungen; Zeile 2 Brenner, Gas, Wasser, Enthärtung;
+die Schaltflächen sind pro Zeile gleich breit.
+Im kompakten Schema sind alle drei Pumpen gleich groß (Größe der Ladepumpe), die Heizkreispumpe sitzt senkrecht
+über der Ladepumpe. Die vier Werte-Boxen (Heizkreis, Kessel, Speicher, Kaltwasser) haben dieselbe Größe (110×52)
+und dieselben Schriftgrößen (Beschriftung 13, Wert 20): Speicher- und Kaltwasser-Box sind gleich breit und senkrecht mittig übereinander,
+die Kessel-Box steht horizontal mittig zur Speicher-Box (gleiche Mittellinie).
+Im kompakten Layout sind die Abstände Überschrift → Schema und Schema → Details gleich groß (je ca. 27 Einheiten,
+die Hälfte des früheren Abstands zur Überschrift). Die Zähler im Schema haben keine Beschriftung. Die Enthärtungsanlage ist 15 % größer als ursprünglich (Unterkante unverändert).
 Im kompakten Schema stehen auch die Zähler: **Gaszähler links unten** (gelbe Leitung senkrecht in den Kessel),
 **Wasserzähler rechts unten**, die **Enthärtungsanlage links neben dem Wasserzähler**. Das Wasser läuft vom
 Wasserzähler über die Enthärtung zum bisherigen Kaltwassereingang (x=250, Knoten der Kaltwasserleitung) in das

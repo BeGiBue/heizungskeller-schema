@@ -64,7 +64,7 @@ Die Karte wählt ihr Layout nach der verfügbaren Breite (Einstellung **Layout**
 - **Kompakt** (unter ca. 700 px, z. B. Handy oder 7"-Display im Hochformat): Kerngeräte mit großen Zahlen
   (Heizkreis, Kessel, Speicher, Kaltwasser) sowie Gaszähler (links unten), Wasserzähler (rechts unten) und
   Enthärtungsanlage im Schema. Ein Tipp auf ein Gerät öffnet den passenden Bereich darunter. Alle weiteren Werte stehen hinter Schaltflächen:
-  *Diagramme*, *Gas*, *Wasser*, *Enthärtung*, *Einstellungen*, *Status* und *Brenner-Details*.
+  *Diagramme*, *Status*, *Einstellungen* (erste Zeile) sowie *Brenner*, *Gas*, *Wasser* und *Enthärtung* (zweite Zeile).
   Ein Tipp klappt den jeweiligen Bereich unter den Schaltflächen auf, ein zweiter Tipp schließt ihn.
 
 Mit `layout: wide` oder `layout: compact` lässt sich das Layout fest vorgeben.
