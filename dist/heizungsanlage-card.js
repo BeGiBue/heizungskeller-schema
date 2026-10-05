@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '3.1.2';
+const CARD_VERSION = '3.1.3';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -635,17 +635,24 @@ class HeizungsanlageCard extends HTMLElement {
 
     let panel = '', ph = 0;
     if (open === 'diagrams') {
-      ph = 290;
-      const g1 = { x0: 28, x1: 465, y0: py + 16, y1: py + 106 };
-      const g2 = { x0: 52, x1: 465, y0: py + 166, y1: py + 256 };
+      const th = 172; // Kachelhöhe inkl. Überschrift
+      const t2 = py + th + 10;
+      ph = th * 2 + 10;
+      const g1 = { x0: 28, x1: 465, y0: py + 48, y1: py + 138 };
+      const g2 = { x0: 52, x1: 465, y0: t2 + 48, y1: t2 + 138 };
       panel =
-        tile(10, py, 580, 140) +
-        `<g class="clk" data-entity="${E.boiler_temp || ''}"><g id="chart-burner" data-x0="${g1.x0}" data-x1="${g1.x1}" data-y0="${g1.y0}" data-y1="${g1.y1}"></g></g>
-         <g class="clk" data-entity="${E.burner_modulation || ''}"><text class="v" id="v-mod" x="574" y="${py + 62}" text-anchor="end" style="font-size:24px;fill:#e08a00">–</text></g>
-         <g class="clk" data-entity="${E.boiler_temp || ''}"><text class="v" id="v-boiler-d" x="574" y="${py + 100}" text-anchor="end" style="font-size:24px;fill:#e53935">–</text></g>` +
-        tile(10, py + 150, 580, 140) +
-        `<g class="clk" data-entity="${E.tank_temp || ''}"><g id="chart" data-x0="${g2.x0}" data-x1="${g2.x1}" data-y0="${g2.y0}" data-y1="${g2.y1}" data-xr="574"></g>
-         <text class="v" id="v-tank-d" x="574" y="${py + 232}" text-anchor="end" style="font-size:26px">–</text></g>`;
+        tile(10, py, 580, th) +
+        `<text class="h" x="24" y="${py + 30}">Brenner</text>
+         <text class="s" x="574" y="${py + 30}" text-anchor="end" style="font-size:14px"><tspan style="fill:#e08a00">● Modulation</tspan><tspan dx="14" style="fill:#e53935">● Kesseltemperatur</tspan></text>
+         <g class="clk" data-entity="${E.boiler_temp || ''}"><g id="chart-burner" data-x0="${g1.x0}" data-x1="${g1.x1}" data-y0="${g1.y0}" data-y1="${g1.y1}"></g></g>
+         <g class="clk" data-entity="${E.burner_modulation || ''}"><text class="v" id="v-mod" x="574" y="${py + 90}" text-anchor="end" style="font-size:24px;fill:#e08a00">–</text></g>
+         <g class="clk" data-entity="${E.boiler_temp || ''}"><text class="v" id="v-boiler-d" x="574" y="${py + 128}" text-anchor="end" style="font-size:24px;fill:#e53935">–</text></g>` +
+        tile(10, t2, 580, th) +
+        `<text class="h" x="24" y="${t2 + 30}">Warmwasserspeicher</text>
+         <text class="s" x="574" y="${t2 + 30}" text-anchor="end" style="font-size:14px"><tspan style="fill:#fb8c00">··· Soll</tspan><tspan dx="14" style="fill:#8e8e93">– – Grenzwerte</tspan></text>
+         <g class="clk" data-entity="${E.tank_temp || ''}"><g id="chart" data-x0="${g2.x0}" data-x1="${g2.x1}" data-y0="${g2.y0}" data-y1="${g2.y1}" data-xr="574"></g>
+         <text class="v" id="v-tank-d" x="574" y="${t2 + 103}" text-anchor="end" style="font-size:26px">–</text></g>`;
+
     } else if (open === 'gas') {
       ph = 130;
       panel = infoTile(py, 130, 'Gaszähler', [['Heute', 'v-gas-today', 0, E.gas_today], ['Stand', 'v-gas-total', 0, E.gas_total]], 'gas', 54);

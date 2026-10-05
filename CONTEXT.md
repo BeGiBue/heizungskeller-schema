@@ -89,4 +89,6 @@ Genutzt wird die Karte vor allem auf dem **Handy** und einem **7"-Raspberry-Disp
 Für schmale Bildschirme wurde **Variante 3 „reduziert"** gewählt: Kerngeräte mit großen Zahlen
 (Heizkreis, Kessel, Speicher, Kaltwasser), alle Details hinter Schaltflächen (Akkordeon, immer nur ein Bereich
 offen): Diagramme, Gas, Wasser, Enthärtung, Einstellungen, Status, Brenner-Details.
+Im Bereich „Diagramme" haben beide Diagramme Überschriften mit kleiner Legende: „Brenner" (Modulation, Kesseltemperatur) und
+„Warmwasserspeicher" (Soll, Grenzwerte).
 Umschaltung automatisch bei < 700 px Breite oder fest über `layout: wide | compact`.
