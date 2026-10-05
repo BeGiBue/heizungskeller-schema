@@ -112,5 +112,7 @@ Die Vorschau nutzt Testdaten (siehe `tools/harness.py`) – kein echtes Home Ass
 
 ## Veröffentlichen
 
-Version erhöhen, Doku abgleichen, `npm run check` + `npm test`, committen. Für ein HACS-Release auf GitHub einen
-Tag/Release `vX.Y.Z` mit der Datei `dist/heizungsanlage-card.js` anlegen (siehe `.claude/commands/release.md`).
+Version erhöhen (`CARD_VERSION` und `package.json`), Abschnitt `## X.Y.Z` in `CHANGELOG.md` ergänzen, Doku abgleichen,
+`npm run check` + `npm test`, committen und auf `main` pushen. Der Workflow `.github/workflows/release.yml` legt dann
+Tag `vX.Y.Z` und GitHub-Release (Notes aus `CHANGELOG.md`, Anhang `dist/heizungsanlage-card.js`) automatisch an
+(siehe `.claude/commands/release.md`).

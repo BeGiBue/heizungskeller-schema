@@ -1,7 +1,8 @@
 name: Release
 
 # Legt für die Version aus package.json automatisch Tag und GitHub-Release an,
-# sobald diese Version auf main liegt und noch kein Release dafür existiert.
+# sobald diese Version auf main liegt und noch kein Release dafür existiert. Gibt es das Release schon,
+# werden nur seine Notes aus CHANGELOG.md aktualisiert.
 on:
   push:
     branches: [main]
@@ -37,7 +38,6 @@ jobs:
         if: steps.v.outputs.exists == 'false'
         run: node --check dist/heizungsanlage-card.js
       - name: Release-Notes aus CHANGELOG.md
-        if: steps.v.outputs.exists == 'false'
         run: |
           awk -v v="## ${{ steps.v.outputs.version }}" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
           test -s notes.md || echo "Release v${{ steps.v.outputs.version }}" > notes.md
@@ -49,3 +49,8 @@ jobs:
           name: v${{ steps.v.outputs.version }}
           body_path: notes.md
           files: dist/heizungsanlage-card.js
+      - name: Release-Notes eines vorhandenen Releases aktualisieren
+        if: steps.v.outputs.exists == 'true'
+        run: gh release edit "v${{ steps.v.outputs.version }}" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}

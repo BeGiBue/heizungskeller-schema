@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Layout Anpassungen
+
 ## 1.0.0
 
 Erstes Release der Home-Assistant-Karte `custom:heizungsanlage-card`.
