@@ -1,0 +1,92 @@
+# Kontext: Heizungskeller Schema
+
+Diese Datei hält fest, was über die Anlage und die verwendeten Entitäten bekannt ist. Sie dient als
+Ausgangspunkt für weitere Änderungen an der Karte (`dist/heizungsanlage-card.js`).
+In Claude Code wird sie automatisch geladen, wenn sie in `CLAUDE.md` umbenannt oder dort verlinkt wird.
+
+## Anlage
+
+- Gas-Brennwertkessel **Viessmann Vitocrossal 300**, eingebunden über die **ViCare-Integration**
+- Warmwasserspeicher **Viessmann Vitocell 100-V**
+- Enthärtungsanlage **Aqmos R2D2-32** (Kabinettgerät)
+- Gaszähler und Wasserzähler; Gas und Wasser sind im Home-Assistant-**Energie-Dashboard** hinterlegt
+- Heizkörper-Heizkreis, Warmwasser-Zirkulation und ein Wasserhahn als Zapfstelle im Schema
+- Dashboard in der **Sections-Ansicht**, die Karte soll zwei Sektionen breit sein (`column_span: 2`)
+
+## Vom Nutzer genannte Entitäten
+
+| Entität | Bedeutung | Schlüssel in `entities:` |
+|---|---|---|
+| `sensor.vicare_outside_temperature` | Außentemperatur | `outside_temp` |
+| `binary_sensor.vicare_frost_protection_active` | Frostschutz aktiv | `frost_protection` |
+| `sensor.vicare_burner_hours` | Brennerstunden | `burner_hours` |
+| `sensor.vicare_burner_starts` | Brennerstarts | `burner_starts` |
+| `binary_sensor.vicare_burner_active` | Brenner aktiv | `burner_active` |
+| `sensor.vicare_burner_modulation` | Brenner-Modulation (%) | `burner_modulation` |
+| `sensor.vicare_boiler_temperature` | Kesseltemperatur | `boiler_temp` |
+| `sensor.vicare_supply_temperature` | Vorlauftemperatur | `supply_temp` |
+| `binary_sensor.vicare_circulation_pump_active` | Heizkreispumpe | `heating_pump` |
+| `binary_sensor.vicare_dhw_pump_active` | Ladepumpe (Speicherladung) | `charge_pump` |
+| `binary_sensor.vicare_dhw_circulation_pump_active` | Zirkulationspumpe Warmwasser | `dhw_circ_pump` |
+| `binary_sensor.vicare_dhw_charging_active` | Warmwasser-Ladung aktiv | – (wird von der Karte nicht verwendet) |
+| `sensor.vscotho1_72_ww_speichertemperatur` | Speichertemperatur (Ist) | `tank_temp` |
+| `number.vscotho1_72_warmwassertemperatur` | Warmwasser-Solltemperatur | `tank_target` |
+| `sensor.vicare_hot_water_min_temperature` | Mindest-Solltemperatur Warmwasser | `tank_min_target` |
+| `sensor.vicare_hot_water_max_temperature` | Maximal-Solltemperatur Warmwasser | `tank_max_target` |
+| `number.vscotho1_72_komforttemperatur` | Komforttemperatur | `comfort_temp` |
+| `number.vscotho1_72_normaltemperatur` | Normaltemperatur | `normal_temp` |
+| `number.vscotho1_72_reduzierte_temperatur` | Reduzierte Temperatur | `reduced_temp` |
+| `number.vscotho1_72_steigung_der_heizkurve` | Steigung der Heizkurve | `curve_slope` |
+| `number.vscotho1_72_verschiebung_der_heizkurve` | Verschiebung der Heizkurve | `curve_shift` |
+| `sensor.wasserzahler_flow` | Wasser-Durchfluss | `water_flow` |
+| `sensor.wasserzahler_total` | Wasserzähler-Stand (Fallback, falls im Energie-Dashboard kein Wasser eingetragen ist) | – (feste Rückfalloption) |
+| `sensor.wasserzahler_water_temperature` | Kaltwassertemperatur | `water_temp` |
+
+## Noch nicht genannt (optional)
+
+Diese Werte sind in der Karte vorgesehen, aber ohne Entität zeigt die Anzeige „–" bzw. kommt aus dem Energie-Dashboard:
+
+| Schlüssel | Bedeutung | Quelle |
+|---|---|---|
+| `gas_total`, `gas_today` | Gaszähler: Stand und Tagesverbrauch | automatisch aus dem Energie-Dashboard |
+| `water_total`, `water_today` | Wasserzähler: Stand und Tagesverbrauch | automatisch aus dem Energie-Dashboard |
+| `softener_regeneration` | Enthärtung: Regeneration | noch keine Entität bekannt |
+| `softener_salt` | Enthärtung: Salzvorrat (%) | noch keine Entität bekannt |
+
+## Zuordnung (vom Nutzer bestätigt)
+
+- `vicare_circulation_pump_active` ist die **Heizkreispumpe**, `vicare_dhw_pump_active` die **Ladepumpe**,
+  `vicare_dhw_circulation_pump_active` die **Warmwasser-Zirkulationspumpe**.
+- `vicare_hot_water_min_temperature` / `…_max_temperature` sind der **Mindest- bzw. Maximal-Sollwert**.
+  Die grauen Grenzlinien im Speicherdiagramm liegen **5 K unter dem Mindest-Sollwert** und **5 K über dem
+  Maximal-Sollwert** (`limit_offset: 5`).
+
+## Design- und Layout-Entscheidungen
+
+- Zeichnung als SVG, Koordinatensystem 1400 Einheiten breit; Gerätegrafiken (Kessel, Speicher, Heizkörper,
+  Gaszähler, Wasserzähler, Enthärtung) sind aus einem Mockup freigestellt und als WebP eingebettet.
+  Pumpen, Hahn und Leitungen sind gezeichnet.
+- Datenboxen stehen jeweils **unter ihrem Gerät**. Pumpen haben **keine Boxen und keine Namen**; läuft eine
+  Pumpe, dreht sich das Flügelrad.
+- Ladepumpe mittig zwischen Kessel und Speicher, Heizkreispumpe senkrecht darüber, Zirkulationspumpe mittig
+  zwischen Speicher und Hahn. Der Kaltwasserzulauf geht gerade und mittig von unten in Kessel und Speicher.
+- **Brennerbox:** ohne Titel und LED; ein 24-h-Graph mit Modulation (Fläche) und Kesseltemperatur (Linie),
+  die beiden Istwerte rechts daneben.
+- **Speicherbox:** ohne Titel; 24-h-Verlauf mit zwei grauen gestrichelten Grenzlinien (ohne Beschriftung) und
+  orange gepunkteter Soll-Linie; rechts Maximum, Istwert und Minimum ohne „Min"/„Max". Brenner- und
+  Speicherbox haben dieselbe Oberkante und Höhe (Speicherbox ist die Referenz).
+- **Untere Leiste** in zwei Zeilen: Status (Außentemperatur, Frostschutz, Brennerstunden, Brennerstarts) und
+  Einstellungen (Komfort, Normal, Reduziert, Warmwasser Soll, Verschiebung, Steigung).
+- Tafel der Enthärtungsanlage (Regeneration, Salz %) ist immer sichtbar; Schriftzug „AQMOS".
+- Kaltwassertemperatur steht über dem Wasserzähler. Titel groß, oben möglichst wenig Leerraum.
+- Das Feld unter dem Heizkörper heißt **„Heizkreis"** (zeigt die Vorlauftemperatur `supply_temp`).
+- Alle Einstellungen laufen über den visuellen Editor von Home Assistant (`ha-form`).
+
+## Mobile Nutzung
+
+Genutzt wird die Karte vor allem auf dem **Handy** und einem **7"-Raspberry-Display im Hochformat**
+(ca. 480 px breit), zusätzlich auf einem **13"-Tablet** (breites Layout).
+Für schmale Bildschirme wurde **Variante 3 „reduziert"** gewählt: Kerngeräte mit großen Zahlen
+(Heizkreis, Kessel, Speicher, Kaltwasser), alle Details hinter Schaltflächen (Akkordeon, immer nur ein Bereich
+offen): Diagramme, Gas, Wasser, Enthärtung, Einstellungen, Status, Brenner-Details.
+Umschaltung automatisch bei < 700 px Breite oder fest über `layout: wide | compact`.

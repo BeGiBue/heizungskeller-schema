@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '3.0.0';
+const CARD_VERSION = '3.1.1';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -22,7 +22,26 @@ const IMG = {
 
 const C = { red: '#e53935', orange: '#fb8c00', blue: '#1e88e5', yellow: '#fbc02d' };
 
+// Gezeichnete Umwälzpumpe (Achse = y 0), wird in der kompakten Ansicht skaliert verwendet
+const PUMP_INNER = (() => {
+  const blades = [0, 60, 120, 180, 240, 300]
+    .map((a) => `<path transform="rotate(${a})" d="M0,-4 C4,-12 14,-19 25,-17 C21,-9 13,-3 5,3 Z" fill="url(#gBlade)"/>`)
+    .join('');
+  return `<rect x="-62" y="-14" width="30" height="28" rx="5" fill="#37474f"/>
+    <rect x="32" y="-14" width="30" height="28" rx="5" fill="#37474f"/>
+    <rect x="-54" y="-17" width="7" height="34" rx="2" fill="#78909c"/>
+    <rect x="47" y="-17" width="7" height="34" rx="2" fill="#78909c"/>
+    <rect x="-13" y="-56" width="26" height="22" rx="5" fill="#1f2528"/>
+    <rect x="-13" y="34" width="26" height="22" rx="5" fill="#1f2528"/>
+    <circle r="40" fill="url(#gPump)" stroke="#8e1b10" stroke-width="2.5"/>
+    <circle r="30" fill="#1b2125" stroke="#ff8a65" stroke-width="2"/>
+    <circle r="26" fill="none" stroke="#3a454b" stroke-width="1"/>
+    <g class="impeller"><circle r="26" fill="none"/>${blades}</g>
+    <circle r="5.5" fill="#eceff1" stroke="#90a4ae" stroke-width="1"/>`;
+})();
+
 const DEFAULTS = {
+  layout: 'auto', // auto = nach Breite, wide = breites Schema, compact = Handy-Ansicht
   title: 'Heizungsanlage',
   subtitle: 'Viessmann Vitocrossal 300 & Vitocell 100-V',
   tank_range: [20, 65], // Temperaturbereich für die Füllanzeige des Speichers
@@ -86,6 +105,37 @@ class HeizungsanlageCard extends HTMLElement {
     if (this.shadowRoot) this.shadowRoot.innerHTML = '';
   }
 
+  connectedCallback() {
+    if (typeof ResizeObserver === 'undefined' || this._ro) return;
+    this._ro = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      if (!w) return;
+      const narrow = w < 700;
+      if (narrow !== this._narrow) {
+        this._narrow = narrow;
+        if (this._built && (this._config.layout || 'auto') === 'auto') {
+          this._built = false;
+          if (this._hass) this.hass = this._hass;
+        }
+      }
+    });
+    this._ro.observe(this);
+  }
+
+  disconnectedCallback() {
+    if (this._ro) {
+      this._ro.disconnect();
+      this._ro = null;
+    }
+  }
+
+  _useNarrow() {
+    const l = this._config.layout || 'auto';
+    if (l === 'compact') return true;
+    if (l === 'wide') return false;
+    return !!this._narrow;
+  }
+
   set hass(hass) {
     this._hass = hass;
     if (!this._config) return;
@@ -118,6 +168,11 @@ class HeizungsanlageCard extends HTMLElement {
 
   _build() {
     if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    if (this._narrow === undefined) {
+      this.style.display = 'block'; // vor dem Messen, sonst hat das Element noch keine Breite
+      const w = this.getBoundingClientRect().width;
+      this._narrow = w > 0 ? w < 700 : false;
+    }
     this.shadowRoot.innerHTML = `<style>${this._css()}</style><ha-card><div class="wrap">${this._svg()}</div></ha-card>`;
     this.shadowRoot.querySelectorAll('[data-entity]').forEach((el) => {
       const id = el.getAttribute('data-entity');
@@ -128,6 +183,15 @@ class HeizungsanlageCard extends HTMLElement {
         );
       });
     });
+    this.shadowRoot.querySelectorAll('[data-topic]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const topic = el.getAttribute('data-topic');
+        this._open = this._open === topic ? null : topic;
+        this._built = false;
+        this._build();
+        this._update();
+      });
+    });
     this._built = true;
   }
 
@@ -136,7 +200,8 @@ class HeizungsanlageCard extends HTMLElement {
       :host { display:block; }
       ha-card { padding: 8px; overflow: hidden; }
       .wrap { overflow-x: auto; }
-      svg { width:100%; min-width:860px; height:auto; display:block; }
+      svg { width:100%; height:auto; display:block; }
+      svg.wide { min-width:700px; }
       text { font-family: var(--paper-font-body1_-_font-family, Roboto, "Segoe UI", sans-serif);
              fill: var(--primary-text-color); font-size: 20px; }
       .s  { fill: var(--secondary-text-color); font-size: 18px; }
@@ -191,6 +256,10 @@ class HeizungsanlageCard extends HTMLElement {
   }
 
   _svg() {
+    return this._useNarrow() ? this._svgNarrow() : this._svgWide();
+  }
+
+  _svgWide() {
     const E = this._config.entities;
     const cfg = this._config;
     const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -301,7 +370,7 @@ class HeizungsanlageCard extends HTMLElement {
         .join('');
 
     return `
-<svg viewBox="0 0 1400 1150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Heizungsanlage">
+<svg class="wide" viewBox="0 0 1400 1150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Heizungsanlage">
   <defs>
     ${['red', 'orange', 'blue', 'yellow']
       .map(
@@ -346,7 +415,7 @@ class HeizungsanlageCard extends HTMLElement {
     ${imgTag('rad', 1180, 262, 170)}
     <rect id="rad-heat" x="1182" y="264" width="136" height="112" rx="5" fill="#e53935" opacity="0"/>
     <rect class="box" x="1190" y="392" width="180" height="44" rx="12"/>
-    <text class="s" x="1204" y="420">Vorlauf</text>
+    <text class="s" x="1204" y="420">Heizkreis</text>
     <text class="v" id="v-supply" x="1356" y="420" text-anchor="end">–</text>
   </g>
 
@@ -434,6 +503,210 @@ class HeizungsanlageCard extends HTMLElement {
   ${chips}
   </g>
 </svg>`;
+  }
+
+  /* ====================================================================
+   * Kompakte Ansicht (Handy / 7"-Display im Hochformat): Variante "reduziert"
+   * Kerngeräte mit großen Zahlen, Details hinter Schaltflächen (Akkordeon).
+   * ==================================================================== */
+  _svgNarrow() {
+    const E = this._config.entities;
+    const cfg = this._config;
+    const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const open = this._open || null;
+
+    const line = (id, d, col) =>
+      `<g class="line" id="ln-${id}"><path class="pipe" d="${d}" stroke="${C[col]}" marker-end="url(#ar-${col})"/><path class="flow" d="${d}"/></g>`;
+    const img = (key, x, y, w) => {
+      const o = IMG[key];
+      return `<image href="${o.d}" x="${x}" y="${y}" width="${w}" height="${((w * o.h) / o.w).toFixed(1)}" preserveAspectRatio="none"/>`;
+    };
+    const imgH = (key, w) => (w * IMG[key].h) / IMG[key].w;
+    const pump = (id, x, y, s, ent) =>
+      `<g class="pump clk" id="pm-${id}" transform="translate(${x},${y}) scale(${s})" data-entity="${ent || ''}">${PUMP_INNER}</g>`;
+
+    const boiler = (x, y, w) => {
+      const h = imgH('boiler', w);
+      const k = w / 220;
+      const wx = x + 0.3545 * w, wy = y + 0.424 * h, ww = 0.382 * w, wh = 0.428 * h;
+      return `<g class="boiler clk" id="boiler" data-entity="${E.burner_active || ''}">
+        ${img('boiler', x, y, w)}
+        <rect x="${wx}" y="${wy}" width="${ww}" height="${wh}" rx="${9 * k}" fill="#120604"/>
+        <rect class="win-glow" x="${wx}" y="${wy}" width="${ww}" height="${wh}" rx="${9 * k}" fill="url(#gWinGlow)"/>
+        <g transform="translate(${x + 0.545 * w},${y + 0.8165 * h}) scale(${(1.3 * k * 0.85).toFixed(3)})">
+          <g id="flame">
+            <path d="M0,0 C-26,-18 -24,-48 0,-76 C8,-54 30,-44 26,-20 C24,-6 12,0 0,0z" fill="#ff6d00"/>
+            <path d="M0,0 C-12,-10 -11,-26 0,-42 C5,-30 15,-26 13,-12 C12,-5 6,0 0,0z" fill="#ffd54f"/>
+          </g>
+        </g></g>`;
+    };
+
+    const tank = (x, y, w) => {
+      const h = (w * 279) / 142;
+      const X = (f) => x + f * w, Y = (f) => y + f * h;
+      const ix = X(0.246), iw = 0.531 * w, iy = Y(0.329), ih = 0.587 * h;
+      return `<g class="clk" data-entity="${E.tank_temp || ''}">
+        ${img('tank', x, y, w)}
+        <rect x="${X(0.2077)}" y="${Y(0.309)}" width="${0.608 * w}" height="${0.6265 * h}" rx="${w * 0.085}" fill="#0d1117"/>
+        <clipPath id="tclip"><rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" rx="${w * 0.06}"/></clipPath>
+        <g clip-path="url(#tclip)">
+          <rect x="${ix}" y="${iy}" width="${iw}" height="${ih}" fill="url(#gCold)"/>
+          <rect id="tank-hot" data-h="${ih.toFixed(1)}" x="${ix}" y="${iy}" width="${iw}" height="${(ih * 0.55).toFixed(1)}" fill="url(#gHot)"/>
+          ${[0.45, 0.58, 0.71, 0.84].map((f) => `<ellipse cx="${ix + iw / 2}" cy="${iy + ih * f}" rx="${iw * 0.38}" ry="${iw * 0.08}" fill="none" stroke="#e1f5fe" stroke-width="2" opacity=".5"/>`).join('')}
+        </g></g>`;
+    };
+
+    const tap = (ex, ey, s) => {
+      const tx = ex - 920 * s, ty = ey - 355 * s;
+      return `<g transform="translate(${tx},${ty}) scale(${s})">
+        <rect x="926" y="342" width="34" height="92" rx="8" fill="#b0bec5" stroke="#78909c" stroke-width="2"/>
+        <rect x="926" y="342" width="34" height="92" rx="8" fill="#eceff1" opacity=".55"/>
+        <path d="M926,350 H958 Q984,350 984,376 V384" fill="none" stroke="#90a4ae" stroke-width="16" stroke-linecap="round"/>
+        <path d="M926,350 H958 Q984,350 984,376 V384" fill="none" stroke="#eceff1" stroke-width="8" stroke-linecap="round"/>
+        <rect x="926" y="326" width="34" height="14" rx="5" fill="#607d8b"/>
+        <g class="drops" id="drops">
+          <circle class="drop" cx="984" cy="398" r="5" fill="#4fc3f7"/>
+          <circle class="drop" cx="984" cy="398" r="5" fill="#4fc3f7"/>
+          <circle class="drop" cx="984" cy="398" r="5" fill="#4fc3f7"/>
+        </g></g>`;
+    };
+
+    const valChip = (x, y, w, label, id, ent, col) =>
+      `<g class="clk" data-entity="${ent || ''}">
+         <rect class="box" x="${x}" y="${y}" width="${w}" height="52" rx="10"/>
+         ${label ? `<text class="s" x="${x + 10}" y="${y + 17}" style="font-size:13px">${label}</text>` : ''}
+         <text class="v" id="${id}" x="${x + 10}" y="${y + (label ? 42 : 34)}" style="font-size:22px;${col ? 'fill:' + col : ''}">–</text></g>`;
+
+    // ---- Schema ----
+    let s = `<g transform="translate(0,100)">`;
+    s += line('heat-f', 'M75,175 V80 H436', 'red') + line('heat-r', 'M436,140 H135 V176', 'orange');
+    s += line('chg-f', 'M184,245 H331', 'red') + line('chg-r', 'M335,325 H186', 'orange');
+    s += line('circ-f', 'M437,245 H540', 'red') + line('circ-r', 'M540,300 H515 V325 H437', 'orange');
+    s += line('cold-b', 'M250,450 H105 V347', 'blue') + line('cold', 'M250,450 H560 V318', 'blue');
+    s += line('cold-t', 'M385,450 V384', 'blue') + line('cold-in', 'M250,545 V454', 'blue');
+    s += `<g class="clk" data-entity="${E.supply_temp || ''}">${img('rad', 440, 52, 140)}<rect id="rad-heat" x="441" y="53" width="112" height="92" rx="4" fill="#e53935" opacity="0"/></g>`;
+    s += pump('heat', 300, 80, 0.7, E.heating_pump) + pump('chg', 257, 245, 0.6, E.charge_pump) + pump('circ', 488, 245, 0.55, E.dhw_circ_pump);
+    s += boiler(30, 170, 150) + tank(335, 183, 100) + tap(540, 245, 0.85);
+    s += valChip(440, 160, 140, 'Heizkreis', 'v-supply', E.supply_temp);
+    s += valChip(118, 350, 112, 'Kessel', 'v-boiler', E.boiler_temp, '#e53935');
+    s += valChip(276, 384, 100, '', 'v-tank', E.tank_temp);
+    s += `<g class="clk" data-entity="${E.water_temp || ''}">
+      <rect class="box" x="160" y="548" width="180" height="34" rx="10"/>
+      <text class="s" x="172" y="570" style="font-size:14px">Kaltwasser</text>
+      <text class="v" id="v-cold" x="328" y="571" text-anchor="end" style="font-size:16px">–</text></g>`;
+    s += '</g>';
+
+    // ---- Detail-Schaltflächen ----
+    const by = 730;
+    const topics = {
+      diagrams: ['Diagramme', 10, by + 4, 138],
+      gas: ['Gas', 158, by + 4, 98],
+      water: ['Wasser', 266, by + 4, 118],
+      softener: ['Enthärtung', 394, by + 4, 196],
+      settings: ['Einstellungen', 10, by + 60, 178],
+      status: ['Status', 198, by + 60, 128],
+      burner: ['Brenner-Details', 336, by + 60, 254],
+    };
+    s += `<text class="s" x="14" y="${by - 6}" style="font-size:15px">Details</text>`;
+    Object.entries(topics).forEach(([key, [label, x, y, w]]) => {
+      const on = open === key;
+      s += `<g class="btn clk" data-topic="${key}">
+        <rect x="${x}" y="${y}" width="${w}" height="46" rx="23" fill="${on ? '#03a9f4' : 'var(--secondary-background-color)'}" stroke="${on ? '#03a9f4' : 'var(--divider-color)'}" stroke-width="1.5"/>
+        <text x="${x + w / 2}" y="${y + 30}" text-anchor="middle" class="h" style="font-size:18px;${on ? 'fill:#fff' : ''}">${label}</text></g>`;
+    });
+
+    // ---- Detail-Bereich (je ein Thema aufgeklappt) ----
+    const py = by + 124;
+    const tile = (x, y, w, h) => `<rect class="box" x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>`;
+    const cell = (x, y, w, label, id, ent, h = 54) =>
+      `<g class="clk" data-entity="${ent || ''}"><rect class="cell" x="${x}" y="${y}" width="${w}" height="${h}" rx="10"/>
+        <text class="s" x="${x + 12}" y="${y + 19}" style="font-size:14px">${label}</text>
+        <text class="v" id="${id}" x="${x + 12}" y="${y + h - 8}" style="font-size:20px">–</text></g>`;
+    const infoTile = (y, h, title, rows, key, iw) => {
+      let t = tile(10, y, 580, h) + `<text class="h" x="24" y="${y + 30}">${title}</text>` + img(key, 590 - iw - 14, y + 8, iw);
+      rows.forEach((r, i) => {
+        const yy = y + 62 + i * 30;
+        t += `<g class="clk" data-entity="${r[3] || ''}"><text class="s" x="24" y="${yy}">${r[0]}</text><text class="v" id="${r[1]}" x="576" y="${yy}" text-anchor="end">–</text></g>`;
+      });
+      return t;
+    };
+
+    let panel = '', ph = 0;
+    if (open === 'diagrams') {
+      ph = 290;
+      const g1 = { x0: 28, x1: 465, y0: py + 16, y1: py + 106 };
+      const g2 = { x0: 52, x1: 465, y0: py + 166, y1: py + 256 };
+      panel =
+        tile(10, py, 580, 140) +
+        `<g class="clk" data-entity="${E.boiler_temp || ''}"><g id="chart-burner" data-x0="${g1.x0}" data-x1="${g1.x1}" data-y0="${g1.y0}" data-y1="${g1.y1}"></g></g>
+         <g class="clk" data-entity="${E.burner_modulation || ''}"><text class="v" id="v-mod" x="574" y="${py + 62}" text-anchor="end" style="font-size:24px;fill:#e08a00">–</text></g>
+         <g class="clk" data-entity="${E.boiler_temp || ''}"><text class="v" id="v-boiler-d" x="574" y="${py + 100}" text-anchor="end" style="font-size:24px;fill:#e53935">–</text></g>` +
+        tile(10, py + 150, 580, 140) +
+        `<g class="clk" data-entity="${E.tank_temp || ''}"><g id="chart" data-x0="${g2.x0}" data-x1="${g2.x1}" data-y0="${g2.y0}" data-y1="${g2.y1}" data-xr="574"></g>
+         <text class="v" id="v-tank-d" x="574" y="${py + 232}" text-anchor="end" style="font-size:26px">–</text></g>`;
+    } else if (open === 'gas') {
+      ph = 112;
+      panel = infoTile(py, 112, 'Gaszähler', [['Heute', 'v-gas-today', 0, E.gas_today], ['Stand', 'v-gas-total', 0, E.gas_total]], 'gas', 54);
+    } else if (open === 'water') {
+      ph = 142;
+      panel = infoTile(py, 142, 'Wasserzähler', [['Heute', 'v-water-today', 0, E.water_today], ['Stand', 'v-water-total', 0, E.water_total], ['Durchfluss', 'v-water-flow', 0, E.water_flow]], 'wm', 64);
+    } else if (open === 'softener') {
+      ph = 112;
+      panel = infoTile(py, 112, 'Enthärtungsanlage', [['Regeneration', 'v-soft-regen', 0, E.softener_regeneration], ['Salz %', 'v-soft-salt', 0, E.softener_salt]], 'soft', 30);
+    } else if (open === 'settings') {
+      ph = 206;
+      const set = [
+        ['Komforttemperatur', 'v-set-comfort', E.comfort_temp],
+        ['Normaltemperatur', 'v-set-normal', E.normal_temp],
+        ['Reduzierte Temperatur', 'v-set-reduced', E.reduced_temp],
+        ['Warmwasser Soll', 'v-set-target', E.tank_target],
+        ['Verschiebung Heizkurve', 'v-set-shift', E.curve_shift],
+        ['Steigung Heizkurve', 'v-set-slope', E.curve_slope],
+      ];
+      panel = tile(10, py, 580, 206) + set.map((c, i) => cell(18 + (i % 2) * 286, py + 10 + Math.floor(i / 2) * 62, 278, c[0], c[1], c[2])).join('');
+    } else if (open === 'status') {
+      ph = 82;
+      panel = tile(10, py, 580, 82) + cell(18, py + 14, 278, 'Außentemperatur', 'v-outside', E.outside_temp) + cell(304, py + 14, 278, 'Frostschutz', 'v-frost', E.frost_protection);
+    } else if (open === 'burner') {
+      ph = 144;
+      panel =
+        tile(10, py, 580, 144) +
+        cell(18, py + 10, 278, 'Modulation', 'v-mod', E.burner_modulation) +
+        cell(304, py + 10, 278, 'Kesseltemperatur', 'v-boiler-d', E.boiler_temp) +
+        cell(18, py + 72, 278, 'Brennerstunden', 'v-hours', E.burner_hours) +
+        cell(304, py + 72, 278, 'Brennerstarts', 'v-starts', E.burner_starts);
+    }
+    const H = open ? py + ph + 20 : by + 126;
+
+    return `
+<svg class="narrow" viewBox="0 0 600 ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Heizungsanlage">
+  ${this._defs()}
+  <g transform="translate(14,6) scale(.8)">
+    <path d="M30,0 C34,18 54,26 54,50 C54,66 44,78 30,78 C16,78 6,66 6,52 C6,40 14,34 18,24 C20,32 24,34 26,36 C28,24 26,12 30,0z" fill="#ff7043"/>
+    <path d="M30,36 C33,46 42,50 42,60 C42,69 36,74 30,74 C24,74 18,69 18,61 C18,54 24,50 26,44 C28,48 29,48 30,36z" fill="#ffca28"/>
+  </g>
+  <text class="big" x="70" y="48" style="font-size:38px;letter-spacing:-.5px">${esc(cfg.title)}</text>
+  <text class="s" x="72" y="76" style="font-size:16px">${esc(cfg.subtitle || '')}</text>
+  ${s}
+  ${panel}
+</svg>`;
+  }
+
+  _defs() {
+    return `<defs>
+    ${['red', 'orange', 'blue', 'yellow']
+      .map(
+        (k) =>
+          `<marker id="ar-${k}" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="22" markerHeight="22" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="${C[k]}"/></marker>`
+      )
+      .join('')}
+    <radialGradient id="gPump" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#ff8a50"/><stop offset=".6" stop-color="#e53b1c"/><stop offset="1" stop-color="#a51b0b"/></radialGradient>
+    <linearGradient id="gBlade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffab91"/><stop offset="1" stop-color="#ff5722"/></linearGradient>
+    <linearGradient id="gHot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5722"/><stop offset="1" stop-color="#ffa726"/></linearGradient>
+    <linearGradient id="gCold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4fc3f7"/><stop offset="1" stop-color="#1565c0"/></linearGradient>
+    <radialGradient id="gWinGlow" cx="50%" cy="85%" r="70%"><stop offset="0" stop-color="#ff6d00" stop-opacity=".75"/><stop offset="1" stop-color="#3e0d02" stop-opacity="0"/></radialGradient>
+    <clipPath id="winClip"><rect x="890" y="499" width="69" height="150" rx="8"/></clipPath>
+  </defs>`;
   }
 
   /* ---------- Hilfsfunktionen ---------- */
@@ -554,8 +827,11 @@ class HeizungsanlageCard extends HTMLElement {
     const E = this._config.entities;
     const $ = (id) => this.shadowRoot.getElementById(id);
     const setT = (id, txt) => {
-      const el = $(id);
-      if (el && el.textContent !== txt) el.textContent = txt;
+      // schreibt in <id> und, falls vorhanden, in die Detail-Anzeige <id>-d
+      [id, id + '-d'].forEach((i) => {
+        const el = $(i);
+        if (el && el.textContent !== txt) el.textContent = txt;
+      });
     };
     const tog = (id, v) => {
       const el = $(id);
@@ -628,7 +904,7 @@ class HeizungsanlageCard extends HTMLElement {
     const hot = $('tank-hot');
     if (hot && t != null) {
       const f = Math.max(0.08, Math.min(1, (t - tmin) / (tmax - tmin)));
-      hot.setAttribute('height', (150 * f).toFixed(1));
+      hot.setAttribute('height', (parseFloat(hot.dataset.h || '150') * f).toFixed(1));
     }
 
     this._drawChart();
@@ -690,7 +966,9 @@ class HeizungsanlageCard extends HTMLElement {
     const g = this.shadowRoot && this.shadowRoot.getElementById('chart-burner');
     if (!g) return;
     const E = this._config.entities;
-    const X0 = 452, X1 = 618, Y0 = 702, Y1 = 802;
+    const D = g.dataset;
+    const X0 = D.x0 ? +D.x0 : 452, X1 = D.x1 ? +D.x1 : 618;
+    const Y0 = D.y0 ? +D.y0 : 702, Y1 = D.y1 ? +D.y1 : 802;
     const mod = this._hists[E.burner_modulation] || [];
     const bt = this._hists[E.boiler_temp] || [];
     if (mod.length < 2 && bt.length < 2) {
@@ -728,7 +1006,9 @@ class HeizungsanlageCard extends HTMLElement {
   _drawChart() {
     const g = this.shadowRoot && this.shadowRoot.getElementById('chart');
     if (!g) return;
-    const X0 = 998, X1 = 1164, Y0 = 702, Y1 = 802;
+    const D = g.dataset;
+    const X0 = D.x0 ? +D.x0 : 998, X1 = D.x1 ? +D.x1 : 1164;
+    const Y0 = D.y0 ? +D.y0 : 702, Y1 = D.y1 ? +D.y1 : 802;
     const E = this._config.entities;
     const pts = this._hists[E.tank_temp] || [];
     if (pts.length < 2) {
@@ -774,7 +1054,7 @@ class HeizungsanlageCard extends HTMLElement {
     s += `<circle cx="${sx(pMax.t).toFixed(1)}" cy="${sy(pMax.v).toFixed(1)}" r="3.5" fill="#e53935" stroke="#fff" stroke-width="1.2"/>`;
     s += `<circle cx="${sx(pMin.t).toFixed(1)}" cy="${sy(pMin.v).toFixed(1)}" r="3.5" fill="#1e88e5" stroke="#fff" stroke-width="1.2"/>`;
     const unit = this._unitOf(E.tank_temp) || '°C';
-    const XR = 1248;
+    const XR = D.xr ? +D.xr : 1248;
     s += `<text class="v" x="${XR}" y="${Y0 + 14}" text-anchor="end" style="font-size:16px;fill:#e53935">${this._fmtVal(pMax.v, unit, 1, 1)}</text>`;
     s += `<text class="v" x="${XR}" y="${Y1}" text-anchor="end" style="font-size:16px;fill:#1e88e5">${this._fmtVal(pMin.v, unit, 1, 1)}</text>`;
     s += `<text class="tick" x="${X0}" y="${Y1 + 20}">–24 h</text><text class="tick" x="${X1}" y="${Y1 + 20}" text-anchor="end">jetzt</text>`;
@@ -800,7 +1080,9 @@ const EDITOR_I18N = {
       water: 'Gas & Wasser',
       softener: 'Enthärtungsanlage',
     },
+    layoutOptions: { auto: 'Automatisch (nach Breite)', wide: 'Breit (Schema)', compact: 'Kompakt (Handy / Hochformat)' },
     labels: {
+      layout: 'Layout',
       title: 'Titel',
       subtitle: 'Untertitel',
       e_outside_temp: 'Außentemperatur',
@@ -810,7 +1092,7 @@ const EDITOR_I18N = {
       e_burner_active: 'Brenner aktiv',
       e_burner_modulation: 'Brenner-Modulation',
       e_boiler_temp: 'Kesseltemperatur',
-      e_supply_temp: 'Vorlauftemperatur',
+      e_supply_temp: 'Heizkreis (Vorlauftemperatur)',
       e_heating_pump: 'Heizkreispumpe',
       e_charge_pump: 'Ladepumpe',
       e_dhw_circ_pump: 'Zirkulationspumpe Warmwasser',
@@ -860,7 +1142,9 @@ const EDITOR_I18N = {
       water: 'Gas & water',
       softener: 'Water softener',
     },
+    layoutOptions: { auto: 'Automatic (by width)', wide: 'Wide (diagram)', compact: 'Compact (phone / portrait)' },
     labels: {
+      layout: 'Layout',
       title: 'Title',
       subtitle: 'Subtitle',
       e_outside_temp: 'Outside temperature',
@@ -870,7 +1154,7 @@ const EDITOR_I18N = {
       e_burner_active: 'Burner active',
       e_burner_modulation: 'Burner modulation',
       e_boiler_temp: 'Boiler temperature',
-      e_supply_temp: 'Supply temperature',
+      e_supply_temp: 'Heating circuit (supply temperature)',
       e_heating_pump: 'Heating circuit pump',
       e_charge_pump: 'Charge pump',
       e_dhw_circ_pump: 'Hot water circulation pump',
@@ -945,6 +1229,19 @@ class HeizungsanlageCardEditor extends HTMLElement {
         schema: [
           { name: 'title', selector: { text: {} } },
           { name: 'subtitle', selector: { text: {} } },
+          {
+            name: 'layout',
+            selector: {
+              select: {
+                mode: 'dropdown',
+                options: [
+                  { value: 'auto', label: t.layoutOptions.auto },
+                  { value: 'wide', label: t.layoutOptions.wide },
+                  { value: 'compact', label: t.layoutOptions.compact },
+                ],
+              },
+            },
+          },
         ],
       },
       {
@@ -1031,6 +1328,7 @@ class HeizungsanlageCardEditor extends HTMLElement {
     const ents = { ...DEFAULTS.entities, ...(cfg.entities || {}) };
     const range = Array.isArray(cfg.tank_range) ? cfg.tank_range : DEFAULTS.tank_range;
     const data = {
+      layout: cfg.layout || DEFAULTS.layout,
       title: cfg.title !== undefined ? cfg.title : DEFAULTS.title,
       subtitle: cfg.subtitle !== undefined ? cfg.subtitle : DEFAULTS.subtitle,
       tank_range_min: range[0],
@@ -1050,6 +1348,7 @@ class HeizungsanlageCardEditor extends HTMLElement {
       if (val === undefined || (typeof val === 'number' && isNaN(val)) || val === def) delete cfg[key];
       else cfg[key] = val;
     };
+    setOrDrop('layout', d.layout, DEFAULTS.layout);
     setOrDrop('title', d.title, DEFAULTS.title);
     setOrDrop('subtitle', d.subtitle, DEFAULTS.subtitle);
     setOrDrop('limit_offset', d.limit_offset, DEFAULTS.limit_offset);

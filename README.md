@@ -1,10 +1,11 @@
 # Heizungskeller Schema
 
-![Vorschau](docs/vorschau.png)
-
 Eine Home-Assistant-Karte (`custom:heizungsanlage-card`), die eine Gas-/Ölheizung als
 animiertes Anlagenschema darstellt: Kessel, Warmwasserspeicher, Pumpen, Heizkörper,
 Gas- und Wasserzähler, Enthärtungsanlage – mit Live-Werten und Verläufen.
+
+![Vorschau](docs/vorschau.png)
+![Kompakte Ansicht](docs/vorschau-kompakt.png)
 
 > Die Standardwerte der Karte passen zu einer Viessmann-Anlage
 > mit der ViCare-Integration (Vitocrossal 300 & Vitocell 100-V), lassen sich aber komplett im
@@ -17,6 +18,7 @@ Gas- und Wasserzähler, Enthärtungsanlage – mit Live-Werten und Verläufen.
 - **Brenner:** Flamme im Sichtfenster, Größe folgt der Modulation. Darunter ein 24-h-Graph mit Modulation und Kesseltemperatur.
 - **Warmwasserspeicher:** Füllanzeige, 24-h-Verlauf mit Soll-Linie, zwei grauen Grenzlinien sowie Maximum, Istwert und Minimum.
 - **Gas und Wasser aus dem Energie-Dashboard** (Stand und Tagesverbrauch), ohne zusätzliche Konfiguration.
+- **Kompakte Ansicht** für Handy und kleine Hochformat-Displays mit aufklappbaren Details.
 - **Untere Leiste:** Status (Außentemperatur, Frostschutz, Brennerstunden, Brennerstarts) und Einstellungen (Heizkurve, Temperaturen).
 - Ein Klick auf jeden Wert öffnet den normalen Home-Assistant-Entitätsdialog.
 
@@ -51,13 +53,26 @@ und löst keine Animation aus.
 
 Die Karte füllt die volle Breite ihres Abschnitts. Für die Breite von zwei Sektionen dem
 Abschnitt die Breite **2 Spalten** geben (YAML: `column_span: 2`). Die Höhe passt sich
-automatisch an. Auf schmalen Bildschirmen (unter ca. 860 px) lässt sich die Karte seitlich
-wischen, damit die Schrift lesbar bleibt.
+automatisch an.
+
+### Layout: breit und kompakt
+
+Die Karte wählt ihr Layout nach der verfügbaren Breite (Einstellung **Layout** im Editor):
+
+- **Breit** (ab ca. 700 px, z. B. Tablet oder Desktop): vollständiges Schema mit allen Geräten,
+  Diagrammen, Datenboxen und der unteren Leiste.
+- **Kompakt** (unter ca. 700 px, z. B. Handy oder 7"-Display im Hochformat): Kerngeräte mit großen Zahlen
+  (Heizkreis, Kessel, Speicher, Kaltwasser). Alle weiteren Werte stehen hinter Schaltflächen:
+  *Diagramme*, *Gas*, *Wasser*, *Enthärtung*, *Einstellungen*, *Status* und *Brenner-Details*.
+  Ein Tipp klappt den jeweiligen Bereich unter den Schaltflächen auf, ein zweiter Tipp schließt ihn.
+
+Mit `layout: wide` oder `layout: compact` lässt sich das Layout fest vorgeben.
 
 ## YAML-Konfiguration (optional)
 
 ```yaml
 type: custom:heizungsanlage-card
+layout: auto              # auto | wide | compact
 title: Heizungsanlage
 subtitle: Viessmann Vitocrossal 300 & Vitocell 100-V
 tank_range: [20, 65]      # Temperaturbereich der Füllanzeige im Speicher (°C)
@@ -117,3 +132,19 @@ Im Editor werden nur Abweichungen von den Standardwerten in die YAML-Konfigurati
 - Werte werden mit der nativen Formatierung von Home Assistant angezeigt (Sprache, Einheit, Anzeige-Genauigkeit der Entität).
 - Die Gerätegrafiken sind als Bilder in die JavaScript-Datei eingebettet, es werden keine weiteren Dateien nachgeladen.
 - Texte in der Karte sind deutsch; der Editor ist deutsch und englisch.
+
+## Entwicklung
+
+Die Karte besteht aus **einer** Datei, `dist/heizungsanlage-card.js` (kein Build-Schritt). Arbeitsanweisungen für
+Claude Code stehen in `CLAUDE.md`, Anlage, Entitäten und Design-Entscheidungen in `CONTEXT.md`.
+
+```bash
+npm run check      # Syntax prüfen
+npm test           # Editor und beide Layouts im Headless-Browser testen (Playwright)
+npm run preview    # Vorschaubilder mit Testdaten nach tools/out/ rendern
+python3 tools/images.py extract   # eingebettete Gerätebilder nach assets/devices/ herausziehen
+python3 tools/images.py embed     # Bilder wieder einbetten
+```
+
+Für Vorschau und Tests: `pip install playwright pillow` und `playwright install chromium`.
+In Claude Code stehen dazu die Befehle `/vorschau` und `/release` bereit (`.claude/commands/`).

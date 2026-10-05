@@ -1,0 +1,11 @@
+{
+  "name": "heizungskeller-schema",
+  "version": "3.1.1",
+  "description": "Home-Assistant-Karte: animiertes Anlagenschema einer Gas-Heizung",
+  "private": true,
+  "scripts": {
+    "check": "node --check dist/heizungsanlage-card.js",
+    "test": "python3 tools/test_editor.py",
+    "preview": "python3 tools/harness.py --all"
+  }
+}
