@@ -59,7 +59,8 @@ Diese Werte sind in der Karte vorgesehen, aber ohne Entität zeigt die Anzeige �
   `vicare_dhw_circulation_pump_active` die **Warmwasser-Zirkulationspumpe**.
 - `vicare_hot_water_min_temperature` / `…_max_temperature` sind der **Mindest- bzw. Maximal-Sollwert**.
   Die grauen Grenzlinien im Speicherdiagramm liegen **5 K unter dem Mindest-Sollwert** und **5 K über dem
-  Maximal-Sollwert** (`limit_offset: 5`).
+  Maximal-Sollwert** (`limit_offset: 5`). Seit 1.0.3 sind sie zugleich der **niedrigste und höchste Skalenwert**
+  des Diagramms; Werte außerhalb werden am Rand gezeichnet, die Zahlen rechts zeigen die echten Werte.
 
 ## Design- und Layout-Entscheidungen
 
@@ -71,7 +72,7 @@ Diese Werte sind in der Karte vorgesehen, aber ohne Entität zeigt die Anzeige �
 - Ladepumpe mittig zwischen Kessel und Speicher, Heizkreispumpe senkrecht darüber, Zirkulationspumpe mittig
   zwischen Speicher und Hahn. Der Kaltwasserzulauf geht gerade und mittig von unten in Kessel und Speicher.
 - **Brennerbox:** ohne Titel und LED; ein 24-h-Graph mit Modulation (Fläche) und Kesseltemperatur (Linie),
-  die beiden Istwerte rechts daneben.
+  die beiden Istwerte rechts daneben. Seit 1.0.3 mit Y-Achse (Werte der Kesseltemperatur in °C, rot beschriftet).
 - **Speicherbox:** ohne Titel; 24-h-Verlauf mit zwei grauen gestrichelten Grenzlinien (ohne Beschriftung) und
   orange gepunkteter Soll-Linie; rechts Maximum, Istwert und Minimum ohne „Min"/„Max". Brenner- und
   Speicherbox haben dieselbe Oberkante und Höhe (Speicherbox ist die Referenz).

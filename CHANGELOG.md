@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+- Speicherdiagramm: Die Skala reicht jetzt von 5 K unter dem Mindest-Sollwert bis 5 K über dem Maximal-Sollwert
+  (`limit_offset`); die grauen Grenzlinien sind Unter- und Obergrenze.
+- Brennerdiagramm: Y-Achse mit den Werten der Kesseltemperatur.
+
 ## 1.0.2
 
 - Breites Layout: Das Schema passt sich der Bildschirmhöhe an und wird ohne Scrollen vollständig angezeigt, z. B. auf dem iPad

@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '1.0.2';
+const CARD_VERSION = '1.0.3';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -674,7 +674,7 @@ class HeizungsanlageCard extends HTMLElement {
       const th = 172; // Kachelhöhe inkl. Überschrift
       const t2 = py + th + 10;
       ph = th * 2 + 10;
-      const g1 = { x0: 28, x1: 465, y0: py + 48, y1: py + 138 };
+      const g1 = { x0: 52, x1: 465, y0: py + 48, y1: py + 138 };
       const g2 = { x0: 52, x1: 465, y0: t2 + 48, y1: t2 + 138 };
       panel =
         tile(10, py, 580, th) +
@@ -1069,13 +1069,25 @@ class HeizungsanlageCard extends HTMLElement {
     return d + `L${X1},${sy(last.v).toFixed(1)}`;
   }
 
+  // Werte der Y-Achse: Unter- und Obergrenze plus runde Zwischenwerte (zu nahe an den Grenzen entfallen)
+  _ticks(mn, mx, sy) {
+    const px = Math.abs(sy(mn) - sy(mx)); // Höhe des Diagramms
+    const step = [5, 10, 20, 25, 50].find((st) => (px * st) / (mx - mn) >= 18) || 50; // Abstand mind. 18 px
+    const ticks = [mn];
+    for (let v = Math.floor(mn / step) * step + step; v < mx; v += step) {
+      if (Math.abs(sy(v) - sy(mn)) >= 12 && Math.abs(sy(v) - sy(mx)) >= 12) ticks.push(v);
+    }
+    ticks.push(mx);
+    return ticks;
+  }
+
   // Brenner: Modulation (Fläche) und Kesseltemperatur (Linie) in einem Graphen
   _drawBurnerChart() {
     const g = this.shadowRoot && this.shadowRoot.getElementById('chart-burner');
     if (!g) return;
     const E = this._config.entities;
     const D = g.dataset;
-    const X0 = D.x0 ? +D.x0 : 452, X1 = D.x1 ? +D.x1 : 618;
+    const X0 = D.x0 ? +D.x0 : 482, X1 = D.x1 ? +D.x1 : 618;
     const Y0 = D.y0 ? +D.y0 : 702, Y1 = D.y1 ? +D.y1 : 802;
     const mod = this._hists[E.burner_modulation] || [];
     const bt = this._hists[E.boiler_temp] || [];
@@ -1087,10 +1099,21 @@ class HeizungsanlageCard extends HTMLElement {
     const t0 = now - 24 * 3600 * 1000;
     const sx = (t) => X0 + ((Math.max(t, t0) - t0) / (now - t0)) * (X1 - X0);
     let s = '';
-    for (let i = 0; i <= 2; i++) {
-      const y = (Y0 + (i * (Y1 - Y0)) / 2).toFixed(1);
-      s += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" stroke="var(--divider-color,#ccc)" stroke-width="1" stroke-dasharray="2 5" opacity=".8"/>`;
+    // Y-Achse: Kesseltemperatur (rot); ohne Temperaturverlauf die Modulation in % (orange)
+    let axis = { mn: 0, mx: 100, color: '#e08a00' };
+    if (bt.length >= 2) {
+      const vals = bt.map((p) => p.v);
+      let mn = Math.floor((Math.min(...vals) - 2) / 5) * 5;
+      let mx = Math.ceil((Math.max(...vals) + 2) / 5) * 5;
+      if (mx - mn < 10) mx = mn + 10;
+      axis = { mn, mx, color: '#e53935' };
     }
+    const sya = (v) => Y1 - ((v - axis.mn) / (axis.mx - axis.mn)) * (Y1 - Y0);
+    this._ticks(axis.mn, axis.mx, sya).forEach((v) => {
+      const y = sya(v).toFixed(1);
+      s += `<line x1="${X0}" x2="${X1}" y1="${y}" y2="${y}" stroke="var(--divider-color,#ccc)" stroke-width="1" stroke-dasharray="2 5" opacity=".8"/>`;
+      s += `<text class="tick" x="${X0 - 6}" y="${(+y + 5).toFixed(1)}" text-anchor="end" style="fill:${axis.color}">${v}</text>`;
+    });
     if (mod.length >= 2) {
       const sy = (v) => Y1 - (Math.max(0, Math.min(100, v)) / 100) * (Y1 - Y0);
       const d = this._series(mod, sx, sy, X1);
@@ -1098,12 +1121,7 @@ class HeizungsanlageCard extends HTMLElement {
       s += `<path d="${d}" fill="none" stroke="#f9a825" stroke-width="2" stroke-linejoin="round"/>`;
     }
     if (bt.length >= 2) {
-      const vals = bt.map((p) => p.v);
-      let mn = Math.floor((Math.min(...vals) - 2) / 5) * 5;
-      let mx = Math.ceil((Math.max(...vals) + 2) / 5) * 5;
-      if (mx - mn < 10) mx = mn + 10;
-      const sy = (v) => Y1 - ((v - mn) / (mx - mn)) * (Y1 - Y0);
-      s += `<path d="${this._series(bt, sx, sy, X1)}" fill="none" stroke="#e53935" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+      s += `<path d="${this._series(bt, sx, sya, X1)}" fill="none" stroke="#e53935" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
     // Zeitfenster: immer die letzten 24 Stunden
     s += `<text class="tick" x="${X0}" y="${Y1 + 20}">–24 h</text><text class="tick" x="${X1}" y="${Y1 + 20}" text-anchor="end">jetzt</text>`;
@@ -1132,20 +1150,25 @@ class HeizungsanlageCard extends HTMLElement {
     const lmin = rawMin != null ? rawMin - off : null; // Mindest-Soll minus Offset
     const lmax = rawMax != null ? rawMax + off : null; // Maximal-Soll plus Offset
 
+    // Skala: von den grauen Grenzlinien begrenzt (Mindest-Soll minus Abstand bis Maximal-Soll plus Abstand);
+    // fehlt ein Grenzwert, wird diese Seite aus dem Verlauf bestimmt
     const vals = pts.map((p) => p.v);
-    [tgt, lmin, lmax].forEach((v) => v != null && vals.push(v));
-    let mn = Math.floor((Math.min(...vals) - 2) / 5) * 5;
-    let mx = Math.ceil((Math.max(...vals) + 2) / 5) * 5;
-    if (mx - mn < 15) mx = mn + 15;
-    const step = mx - mn > 30 ? 10 : 5;
+    if (tgt != null) vals.push(tgt);
+    let mn = lmin != null ? lmin : Math.floor((Math.min(...vals) - 2) / 5) * 5;
+    let mx = lmax != null ? lmax : Math.ceil((Math.max(...vals) + 2) / 5) * 5;
+    if (mx - mn < 10) {
+      if (lmax == null) mx = mn + 10;
+      else mn = mx - 10;
+    }
     const sx = (t) => X0 + ((Math.max(t, t0) - t0) / (now - t0)) * (X1 - X0);
-    const sy = (v) => Y1 - ((v - mn) / (mx - mn)) * (Y1 - Y0);
+    // Werte außerhalb der Skala werden am Rand gezeichnet (die Zahlen rechts zeigen weiterhin die echten Werte)
+    const sy = (v) => Y1 - ((Math.max(mn, Math.min(mx, v)) - mn) / (mx - mn)) * (Y1 - Y0);
 
     let s = '';
-    for (let v = mn; v <= mx; v += step) {
+    this._ticks(mn, mx, sy).forEach((v) => {
       s += `<line x1="${X0}" x2="${X1}" y1="${sy(v).toFixed(1)}" y2="${sy(v).toFixed(1)}" stroke="var(--divider-color,#ccc)" stroke-width="1" stroke-dasharray="2 5" opacity=".7"/>`;
-      s += `<text class="tick" x="${X0 - 6}" y="${(sy(v) + 5).toFixed(1)}" text-anchor="end">${v}</text>`;
-    }
+      s += `<text class="tick" x="${X0 - 6}" y="${(sy(v) + 5).toFixed(1)}" text-anchor="end">${+v.toFixed(1)}</text>`;
+    });
     // Grenzwerte (grau gestrichelt, ohne Beschriftung)
     [lmin, lmax].forEach((v) => {
       if (v == null) return;
@@ -1243,7 +1266,7 @@ const EDITOR_I18N = {
       e_tank_max_target: 'Graue Grenzlinie im Diagramm = dieser Wert plus Abstand',
       tank_range_min: 'Temperatur, bei der der Speicher in der Grafik „leer" ist',
       tank_range_max: 'Temperatur, bei der der Speicher in der Grafik „voll" ist',
-      limit_offset: 'Abstand der grauen Linien zu den Soll-Grenzwerten in Kelvin',
+      limit_offset: 'Abstand der grauen Linien zu den Soll-Grenzwerten in Kelvin; die Linien sind zugleich Unter- und Obergrenze der Skala',
       e_gas_total: 'Leer lassen = automatisch aus dem Energie-Dashboard',
       e_gas_today: 'Leer lassen = Tagesverbrauch aus dem Energie-Dashboard',
       e_water_total: 'Leer lassen = automatisch aus dem Energie-Dashboard',
@@ -1309,7 +1332,7 @@ const EDITOR_I18N = {
       e_tank_max_target: 'Grey limit line in the chart = this value plus offset',
       tank_range_min: 'Temperature at which the tank graphic shows "empty"',
       tank_range_max: 'Temperature at which the tank graphic shows "full"',
-      limit_offset: 'Distance of the grey lines to the target limits in Kelvin',
+      limit_offset: 'Distance of the grey lines to the target limits in Kelvin; the lines are also the bottom and top of the scale',
       e_gas_total: 'Leave empty = automatic from the Energy dashboard',
       e_gas_today: 'Leave empty = daily usage from the Energy dashboard',
       e_water_total: 'Leave empty = automatic from the Energy dashboard',
