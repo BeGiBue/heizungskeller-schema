@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '3.2.5';
+const CARD_VERSION = '1.0.0';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
