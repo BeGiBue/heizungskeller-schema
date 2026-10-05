@@ -1,0 +1,15 @@
+name: Idee / Feature request
+description: Vorschlag für eine neue Funktion oder Anzeige. / Suggest a new feature or display.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idee
+    attributes:
+      label: Was wünschst du dir? / What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: anlage
+    attributes:
+      label: Deine Anlage und Entitäten / Your system and entities
+      description: Welche Geräte und Entitäten sollen angezeigt werden? / Which devices and entities should be shown?

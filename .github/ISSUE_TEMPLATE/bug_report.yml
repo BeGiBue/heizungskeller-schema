@@ -1,0 +1,54 @@
+name: Fehler melden / Bug report
+description: Etwas funktioniert nicht wie erwartet. / Something does not work as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: Was ist passiert? / What happened?
+      description: Kurze Beschreibung und, wenn möglich, ein Screenshot. / Short description and, if possible, a screenshot.
+    validations:
+      required: true
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Was hast du erwartet? / What did you expect?
+  - type: input
+    id: kartenversion
+    attributes:
+      label: Version der Karte / Card version
+      description: Steht in der Browser-Konsole als „HEIZUNGSANLAGE-CARD vX.Y.Z“. / Shown in the browser console.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: haversion
+    attributes:
+      label: Home-Assistant-Version / Home Assistant version
+      placeholder: "2026.10.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: layout
+    attributes:
+      label: Layout
+      options:
+        - breit / wide
+        - kompakt / compact
+        - beide / both
+  - type: input
+    id: geraet
+    attributes:
+      label: Browser / App und Gerät / Browser / app and device
+      placeholder: "Companion-App auf Android, Chrome auf Windows …"
+  - type: textarea
+    id: konfiguration
+    attributes:
+      label: Kartenkonfiguration (YAML) / Card configuration (YAML)
+      description: Im Karteneditor über „Code-Editor anzeigen“. / In the card editor via "Show code editor".
+      render: yaml
+  - type: textarea
+    id: konsole
+    attributes:
+      label: Fehlermeldungen aus der Browser-Konsole / Browser console errors
+      render: text
