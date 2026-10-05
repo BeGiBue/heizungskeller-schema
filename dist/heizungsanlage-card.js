@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '3.1.1';
+const CARD_VERSION = '3.1.2';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -623,9 +623,11 @@ class HeizungsanlageCard extends HTMLElement {
         <text class="s" x="${x + 12}" y="${y + 19}" style="font-size:14px">${label}</text>
         <text class="v" id="${id}" x="${x + 12}" y="${y + h - 8}" style="font-size:20px">–</text></g>`;
     const infoTile = (y, h, title, rows, key, iw) => {
-      let t = tile(10, y, 580, h) + `<text class="h" x="24" y="${y + 30}">${title}</text>` + img(key, 590 - iw - 14, y + 8, iw);
+      // Zählerbild begrenzen (max. 40 hoch) und die Datenzeilen darunter mit Abstand beginnen lassen
+      const w2 = Math.min(iw, (40 * IMG[key].w) / IMG[key].h);
+      let t = tile(10, y, 580, h) + `<text class="h" x="24" y="${y + 30}">${title}</text>` + img(key, 590 - w2 - 14, y + 6, w2);
       rows.forEach((r, i) => {
-        const yy = y + 62 + i * 30;
+        const yy = y + 84 + i * 30;
         t += `<g class="clk" data-entity="${r[3] || ''}"><text class="s" x="24" y="${yy}">${r[0]}</text><text class="v" id="${r[1]}" x="576" y="${yy}" text-anchor="end">–</text></g>`;
       });
       return t;
@@ -645,14 +647,14 @@ class HeizungsanlageCard extends HTMLElement {
         `<g class="clk" data-entity="${E.tank_temp || ''}"><g id="chart" data-x0="${g2.x0}" data-x1="${g2.x1}" data-y0="${g2.y0}" data-y1="${g2.y1}" data-xr="574"></g>
          <text class="v" id="v-tank-d" x="574" y="${py + 232}" text-anchor="end" style="font-size:26px">–</text></g>`;
     } else if (open === 'gas') {
-      ph = 112;
-      panel = infoTile(py, 112, 'Gaszähler', [['Heute', 'v-gas-today', 0, E.gas_today], ['Stand', 'v-gas-total', 0, E.gas_total]], 'gas', 54);
+      ph = 130;
+      panel = infoTile(py, 130, 'Gaszähler', [['Heute', 'v-gas-today', 0, E.gas_today], ['Stand', 'v-gas-total', 0, E.gas_total]], 'gas', 54);
     } else if (open === 'water') {
-      ph = 142;
-      panel = infoTile(py, 142, 'Wasserzähler', [['Heute', 'v-water-today', 0, E.water_today], ['Stand', 'v-water-total', 0, E.water_total], ['Durchfluss', 'v-water-flow', 0, E.water_flow]], 'wm', 64);
+      ph = 160;
+      panel = infoTile(py, 160, 'Wasserzähler', [['Heute', 'v-water-today', 0, E.water_today], ['Stand', 'v-water-total', 0, E.water_total], ['Durchfluss', 'v-water-flow', 0, E.water_flow]], 'wm', 64);
     } else if (open === 'softener') {
-      ph = 112;
-      panel = infoTile(py, 112, 'Enthärtungsanlage', [['Regeneration', 'v-soft-regen', 0, E.softener_regeneration], ['Salz %', 'v-soft-salt', 0, E.softener_salt]], 'soft', 30);
+      ph = 130;
+      panel = infoTile(py, 130, 'Enthärtungsanlage', [['Regeneration', 'v-soft-regen', 0, E.softener_regeneration], ['Salz %', 'v-soft-salt', 0, E.softener_salt]], 'soft', 30);
     } else if (open === 'settings') {
       ph = 206;
       const set = [
