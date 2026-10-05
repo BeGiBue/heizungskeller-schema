@@ -1,11 +1,17 @@
 name: Validate
 
+# Läuft nur, wenn sich etwas für HACS oder die Karte Relevantes ändert (kein täglicher Lauf,
+# damit keine wiederkehrenden Benachrichtigungs-Mails entstehen). Manuell über "Run workflow" startbar.
 on:
   push:
+    branches: [main]
+    paths:
+      - 'dist/**'
+      - 'hacs.json'
+      - 'README.md'
+      - '.github/workflows/validate.yml'
   pull_request:
   workflow_dispatch:
-  schedule:
-    - cron: '17 4 * * *' # täglich, wie von HACS empfohlen
 
 jobs:
   hacs:
