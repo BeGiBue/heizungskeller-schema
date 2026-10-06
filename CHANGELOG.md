@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.5
+
+- Boxen „Wasserzähler“ und „Enthärtungsanlage“: Alle Messwerte stehen jetzt samt Einheit rechtsbündig (bündig am rechten
+  Rand), im breiten und im kompakten Layout. Die übrigen Boxen (Gas, Brenner, Speicher) behalten die Einheiten-Spalte.
+
 ## 1.0.4
 
 - Enthärtungs-Tafel: Zeitstempel (letzte Regeneration) werden nur noch als Datum angezeigt (keine Uhrzeit, kein Überlappen mehr

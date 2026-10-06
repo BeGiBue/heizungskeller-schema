@@ -73,7 +73,8 @@ Detailbereich ab y854. Die Höhe der `viewBox` hängt vom geöffneten Thema ab.
   über `UNIT_FACTORS` aus der Einheit der Entität um (unbekannte Einheit → unveränderte Anzeige). Neue Einheit = Eintrag dort.
 - **Zahl + Einheit:** Werte in Boxen mit mehreren Zahlenwerten werden mit `numUnit(id, gruppe, x, y, style)` erzeugt (zwei
   Textelemente). `setT` trennt Text per `_splitUnit`, `_alignUnits()` richtet die Einheiten einer Gruppe linksbündig
-  untereinander aus. Liter immer mit **ℓ** (`_liter`), nie mit „L" oder „l".
+  untereinander aus. Mit `numUnit(…, style, 'right')` endet stattdessen jeder Wert samt Einheit bündig am rechten Rand
+  (Wasserzähler- und Enthärtungs-Box). Liter immer mit **ℓ** (`_liter`), nie mit „L" oder „l".
 - **Texte setzen** über `setT(id, text)`; schreibt zusätzlich in das Element `<id>-d` (kompakte Ansicht zeigt
   einige Werte zugleich im Schema und im Detailbereich).
 - **Klickbar** ist alles mit `data-entity="…"` (öffnet den Home-Assistant-Dialog). Leere Entität = nicht klickbar.

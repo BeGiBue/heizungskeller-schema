@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '1.0.4';
+const CARD_VERSION = '1.0.5';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -30,8 +30,9 @@ const UNIT_FACTORS = {
 
 // Wert als zwei Textelemente: Zahl (rechtsbündig) und Einheit (linksbündig). Alle Elemente einer Gruppe (data-ug)
 // bekommen in _alignUnits() dieselbe Einheiten-Spalte, so stehen die Einheiten einer Box linksbündig untereinander.
-const numUnit = (id, group, x, y, style = '') =>
-  `<text class="v" id="${id}" data-ug="${group}" data-uid="${id}-u" data-r="${x}" x="${x}" y="${y}" text-anchor="end" style="${style}">–</text>` +
+// align = 'right': jeder Wert endet samt Einheit bündig an x (keine gemeinsame Einheiten-Spalte).
+const numUnit = (id, group, x, y, style = '', align = '') =>
+  `<text class="v" id="${id}" data-ug="${group}" data-uid="${id}-u" data-r="${x}"${align ? ` data-ua="${align}"` : ''} x="${x}" y="${y}" text-anchor="end" style="${style}">–</text>` +
   `<text class="v" id="${id}-u" x="${x}" y="${y}" text-anchor="start" style="${style}"></text>`;
 
 // Gezeichnete Umwälzpumpe (Achse = y 0), wird in der kompakten Ansicht skaliert verwendet
@@ -319,7 +320,7 @@ class HeizungsanlageCard extends HTMLElement {
          <circle r="5.5" fill="#eceff1" stroke="#90a4ae" stroke-width="1"/>
        </g>`;
 
-    const infoBox = (x, y, w, title, rows, ent) => {
+    const infoBox = (x, y, w, title, rows, ent, align = '') => {
       const h = 46 + rows.length * 32;
       const gid = `ib-${x}-${y}`;
       let s = `<g><rect class="box" x="${x}" y="${y}" width="${w}" height="${h}" rx="14"/>
@@ -328,7 +329,7 @@ class HeizungsanlageCard extends HTMLElement {
         const yy = y + 64 + i * 32;
         s += `<g class="clk" data-entity="${r.ent || ent || ''}">
           <text class="s" x="${x + 14}" y="${yy}">${r.label}</text>
-          ${r.plain ? `<text class="v" id="${r.id}" x="${x + w - 14}" y="${yy}" text-anchor="end">–</text>` : numUnit(r.id, gid, x + w - 14, yy)}</g>`;
+          ${r.plain ? `<text class="v" id="${r.id}" x="${x + w - 14}" y="${yy}" text-anchor="end">–</text>` : numUnit(r.id, gid, x + w - 14, yy, '', align)}</g>`;
       });
       return s + '</g>';
     };
@@ -344,14 +345,14 @@ class HeizungsanlageCard extends HTMLElement {
       { label: 'Stand', id: 'v-water-total', ent: E.water_total || '' },
     ];
     if (E.water_flow) waterRows.push({ label: 'Durchfluss', id: 'v-water-flow', ent: E.water_flow });
-    const waterBox = infoBox(20, 912, 205, 'Wasserzähler', waterRows);
+    const waterBox = infoBox(20, 912, 205, 'Wasserzähler', waterRows, '', 'right'); // Messwerte rechtsbündig
 
     // Tafel der Enthärtungsanlage (immer sichtbar, Werte nur wenn Entitäten eingetragen sind)
     const softBox = infoBox(360, 912, 290, 'Enthärtungsanlage', [
       { label: 'Regeneration', id: 'v-soft-regen', ent: E.softener_regeneration || '', plain: true }, // Datum, keine Einheit
       { label: 'Salz %', id: 'v-soft-salt', ent: E.softener_salt || '' },
       { label: 'Noch ca.', id: 'v-soft-left', ent: E.softener_remaining || '' },
-    ]);
+    ], '', 'right'); // Messwerte rechtsbündig
 
     // ---- Untere Leiste: Status (Kennzahlen) und Einstellungen ----
     const chips = [
@@ -660,13 +661,13 @@ class HeizungsanlageCard extends HTMLElement {
       `<g class="clk" data-entity="${ent || ''}"><rect class="cell" x="${x}" y="${y}" width="${w}" height="${h}" rx="10"/>
         <text class="s" x="${x + 12}" y="${y + 19}" style="font-size:14px">${label}</text>
         <text class="v" id="${id}" x="${x + 12}" y="${y + h - 8}" style="font-size:20px">–</text></g>`;
-    const infoTile = (y, h, title, rows, key, iw) => {
+    const infoTile = (y, h, title, rows, key, iw, align = '') => {
       // Zählerbild begrenzen (max. 40 hoch) und die Datenzeilen darunter mit Abstand beginnen lassen
       const w2 = Math.min(iw, (40 * IMG[key].w) / IMG[key].h);
       let t = tile(10, y, 580, h) + `<text class="h" x="24" y="${y + 30}">${title}</text>` + img(key, 590 - w2 - 14, y + 6, w2);
       rows.forEach((r, i) => {
         const yy = y + 84 + i * 30;
-        t += `<g class="clk" data-entity="${r[3] || ''}"><text class="s" x="24" y="${yy}">${r[0]}</text>${r[4] ? `<text class="v" id="${r[1]}" x="576" y="${yy}" text-anchor="end">–</text>` : numUnit(r[1], 'it-' + title, 576, yy)}</g>`;
+        t += `<g class="clk" data-entity="${r[3] || ''}"><text class="s" x="24" y="${yy}">${r[0]}</text>${r[4] ? `<text class="v" id="${r[1]}" x="576" y="${yy}" text-anchor="end">–</text>` : numUnit(r[1], 'it-' + title, 576, yy, '', align)}</g>`;
       });
       return t;
     };
@@ -696,10 +697,10 @@ class HeizungsanlageCard extends HTMLElement {
       panel = infoTile(py, 130, 'Gaszähler', [['Heute', 'v-gas-today', 0, E.gas_today], ['Stand', 'v-gas-total', 0, E.gas_total]], 'gas', 54);
     } else if (open === 'water') {
       ph = 160;
-      panel = infoTile(py, 160, 'Wasserzähler', [['Heute', 'v-water-today', 0, E.water_today], ['Stand', 'v-water-total', 0, E.water_total], ['Durchfluss', 'v-water-flow', 0, E.water_flow]], 'wm', 64);
+      panel = infoTile(py, 160, 'Wasserzähler', [['Heute', 'v-water-today', 0, E.water_today], ['Stand', 'v-water-total', 0, E.water_total], ['Durchfluss', 'v-water-flow', 0, E.water_flow]], 'wm', 64, 'right');
     } else if (open === 'softener') {
       ph = 160;
-      panel = infoTile(py, 160, 'Enthärtungsanlage', [['Regeneration', 'v-soft-regen', 0, E.softener_regeneration, true], ['Salz %', 'v-soft-salt', 0, E.softener_salt], ['Noch ca.', 'v-soft-left', 0, E.softener_remaining]], 'soft', 30);
+      panel = infoTile(py, 160, 'Enthärtungsanlage', [['Regeneration', 'v-soft-regen', 0, E.softener_regeneration, true], ['Salz %', 'v-soft-salt', 0, E.softener_salt], ['Noch ca.', 'v-soft-left', 0, E.softener_remaining]], 'soft', 30, 'right');
     } else if (open === 'settings') {
       ph = 206;
       const set = [
@@ -1024,7 +1025,8 @@ class HeizungsanlageCard extends HTMLElement {
   }
 
   // Einheiten-Spalte je Gruppe (data-ug) bestimmen: breiteste Einheit bestimmt die Spalte,
-  // alle Einheiten stehen linksbündig untereinander, die Zahlen rechtsbündig davor
+  // alle Einheiten stehen linksbündig untereinander, die Zahlen rechtsbündig davor.
+  // Gruppen mit data-ua="right": jeder Wert endet samt Einheit bündig am rechten Rand.
   _alignUnits() {
     const root = this.shadowRoot;
     if (!root) return;
@@ -1035,6 +1037,15 @@ class HeizungsanlageCard extends HTMLElement {
     Object.values(groups).forEach((nums) => {
       const units = nums.map((el) => root.getElementById(el.dataset.uid)).filter(Boolean);
       const R = parseFloat(nums[0].dataset.r);
+      if (nums[0].dataset.ua === 'right') {
+        nums.forEach((el) => {
+          const u = root.getElementById(el.dataset.uid);
+          const uw = u && u.textContent ? u.getComputedTextLength() : 0;
+          if (u) u.setAttribute('x', (R - uw).toFixed(1));
+          el.setAttribute('x', (uw ? R - uw - 5 : R).toFixed(1));
+        });
+        return;
+      }
       const maxW = Math.max(0, ...units.map((u) => (u.textContent ? u.getComputedTextLength() : 0)));
       const ux = R - maxW;
       units.forEach((u) => u.setAttribute('x', ux.toFixed(1)));

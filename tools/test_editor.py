@@ -61,6 +61,13 @@ async ([states, layout, width]) => {
   const ux = (ids) => ids.map((id) => { const u = r.getElementById(id + '-u'); return u ? u.getAttribute('x') : null; });
   const nx = (ids) => ids.map((id) => { const n = r.getElementById(id); return n ? n.getAttribute('x') : null; });
   const water = ['v-water-today', 'v-water-total', 'v-water-flow'];
+  const right = (ids) => ids.map((id) => {
+    const n = r.getElementById(id), u = r.getElementById(id + '-u');
+    const e = u && u.textContent ? u : n;
+    if (!e) return null;
+    const b = e.getBBox();
+    return Math.round(b.x + b.width);
+  });
   return {
     cls: r.querySelector('svg').getAttribute('class'),
     ids: ['boiler', 'tank-hot', 'pm-heat', 'pm-chg', 'pm-circ', 'ln-heat-f', 'ln-cold', 'flame', 'v-supply', 'v-tank', 'v-cold'].filter((i) => !has(i)),
@@ -72,6 +79,7 @@ async ([states, layout, width]) => {
     wh: val('v-water-today'),
     waterUx: ux(water),
     waterNx: nx(water),
+    waterRight: right(water),
     burnerUx: ux(['v-mod', 'v-boiler']),
     tankUx: ux(['v-tank', 'ch-max', 'ch-min']),
     burnerOn: r.getElementById('boiler').classList.contains('on'),
@@ -116,7 +124,9 @@ async ([states, left, layout]) => {
   const r = c.shadowRoot;
   const txt = (id) => { const n = r.getElementById(id), u = r.getElementById(id + '-u'); return n ? n.textContent + (u && u.textContent ? ' ' + u.textContent : '') : null; };
   const fs = (id) => { const e = r.getElementById(id); return e ? getComputedStyle(e).fontSize : null; };
-  return {regen: txt('v-soft-regen'), salt: txt('v-soft-salt'), left: txt('v-soft-left'),
+  const right = (id) => { const n = r.getElementById(id), u = r.getElementById(id + '-u');
+    const e = u && u.textContent ? u : n; const b = e.getBBox(); return Math.round(b.x + b.width); };
+  return {softRight: ['v-soft-regen', 'v-soft-salt', 'v-soft-left'].map(right), regen: txt('v-soft-regen'), salt: txt('v-soft-salt'), left: txt('v-soft-left'),
           regenGrouped: !!r.getElementById('v-soft-regen').dataset.ug, leftGrouped: !!r.getElementById('v-soft-left').dataset.ug,
           coldFont: fs('v-cold'), supplyFont: fs('v-supply')};
 }
@@ -171,8 +181,8 @@ def main():
                 check(f"{tag}: Durchfluss in ℓ/h (m³/h → ℓ/h)", res["wf"] == "12 ℓ/h")
                 check(f"{tag}: Liter-Symbol ℓ statt L", res["wh"] == "177 ℓ")
                 same = lambda a: len(set(a)) == 1 and a[0] is not None
-                check(f"{tag}: Wasserzähler-Box: Einheiten linksbündig untereinander", same(res["waterUx"]))
-                check(f"{tag}: Wasserzähler-Box: Zahlen rechtsbündig vor der Einheitenspalte", same(res["waterNx"]))
+                near = lambda a: None not in a and max(a) - min(a) <= 1
+                check(f"{tag}: Wasserzähler-Box: alle Messwerte samt Einheit rechtsbündig", near(res["waterRight"]))
                 check(f"{tag}: Brenner-Box: Einheiten linksbündig untereinander", same(res["burnerUx"]))
             if cls == "narrow":
                 check(f"{tag}: 7 Detail-Schaltflächen", res["topics"] == 7)
@@ -200,6 +210,7 @@ def main():
             check(f"Enthärtung ({layout}): Restbestand „12 Regenerationen“", r12["left"] == "12 Regenerationen")
             check(f"Enthärtung ({layout}): Singular bei 1 Regeneration", r1["left"] == "1 Regeneration")
             check(f"Enthärtung ({layout}): Datum steht rechtsbündig außerhalb der Einheitenspalte", not r12["regenGrouped"] and r12["leftGrouped"])
+            check(f"Enthärtung ({layout}): alle Messwerte samt Einheit rechtsbündig", max(r12["softRight"]) - min(r12["softRight"]) <= 1)
         wide = pg3.evaluate(SOFT_JS, [states, 12, "wide"])
         check("Kaltwasser-Box hat dieselbe Schriftgröße wie die anderen Boxen (breit)", wide["coldFont"] is not None and wide["coldFont"] == wide["supplyFont"])
         check("Keine JavaScript-Fehler im Browser", not errs)
