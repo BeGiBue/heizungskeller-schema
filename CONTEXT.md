@@ -79,6 +79,9 @@ Diese Werte sind in der Karte vorgesehen, aber ohne Entität zeigt die Anzeige �
 - **Untere Leiste** in zwei Zeilen: Status (Außentemperatur, Frostschutz, Brennerstunden, Brennerstarts) und
   Einstellungen (Komfort, Normal, Reduziert, Warmwasser Soll, Verschiebung, Steigung).
 - Tafel der Enthärtungsanlage (Regeneration, Salz %) ist immer sichtbar; Schriftzug „AQMOS".
+- Enthärtungs-Tafel mit drei Zeilen: Regeneration (Datum ohne Uhrzeit), Salz %, Noch ca. N Regenerationen
+  (`softener_remaining`). Zeitstempel werden in der Karte generell nur als Datum angezeigt. Die Kaltwasser-Box (breit)
+  nutzt dieselben Schriftgrößen wie die anderen Boxen (Beschriftung 18, Wert 20).
 - Kaltwassertemperatur steht über dem Wasserzähler, die Box ist so breit wie die Wasserzähler-Box (breites Layout).
 - **Versionsnummer:** vom Nutzer auf **1.0.1** festgelegt (Zählung neu begonnen; vorherige interne Stände 3.x entfallen). Ab hier hochzählen.
 - **Liter-Symbol:** ℓ (U+2113) statt „L"/„l", damit es von einem großen I unterscheidbar ist (z. B. „177 ℓ", „12 ℓ/h").

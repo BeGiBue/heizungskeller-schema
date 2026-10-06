@@ -20,6 +20,7 @@ Gas- und Wasserzähler, Enthärtungsanlage – mit Live-Werten und Verläufen.
 - **Einheiten umgerechnet:** Der Wasserzähler zeigt den Stand in m³ mit zwei Nachkommastellen und den Durchfluss in ℓ/h, egal in welcher Einheit der Sensor liefert (L, m³; m³/h, l/min, l/h …). Liter werden mit dem Symbol ℓ geschrieben, damit es nicht mit einem großen I verwechselt wird.
 - **Einheiten linksbündig:** In Boxen mit mehreren Zahlenwerten stehen die Einheiten linksbündig untereinander, die Zahlen rechtsbündig davor.
 - **Gas und Wasser aus dem Energie-Dashboard** (Stand und Tagesverbrauch), ohne zusätzliche Konfiguration.
+- **Tafel der Enthärtungsanlage:** letzte Regeneration (Datum), Salzstand in % und geschätzter Restbestand in Regenerationen, z. B. aus der Integration `heizungskeller-enthaertung`.
 - **Kompakte Ansicht** für Handy und kleine Hochformat-Displays mit aufklappbaren Details.
 - **Untere Leiste:** Status (Außentemperatur, Frostschutz, Brennerstunden, Brennerstarts) und Einstellungen (Heizkurve, Temperaturen).
 - Ein Klick auf jeden Wert öffnet den normalen Home-Assistant-Entitätsdialog.
@@ -124,8 +125,9 @@ entities:
   # water_total: sensor.…
   # water_today: sensor.…
   # Optional (Tafel der Enthärtungsanlage):
-  # softener_regeneration: sensor.…
-  # softener_salt: sensor.…
+  # softener_regeneration: sensor.…   # Zeitstempel der letzten Regeneration (angezeigt wird nur das Datum)
+  # softener_salt: sensor.…           # Salzfüllstand in %
+  # softener_remaining: sensor.…      # Restbestand in Regenerationen („Noch ca. N Regenerationen“)
 ```
 
 Im Editor werden nur Abweichungen von den Standardwerten in die YAML-Konfiguration geschrieben.

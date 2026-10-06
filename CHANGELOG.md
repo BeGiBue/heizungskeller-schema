@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+- Enthärtungs-Tafel: Zeitstempel (letzte Regeneration) werden nur noch als Datum angezeigt (keine Uhrzeit, kein Überlappen mehr
+  mit der Beschriftung). Neue Zeile „Noch ca. N Regenerationen“ mit der neuen Entität `softener_remaining` (Restbestand),
+  auch im Karteneditor. Die Tafel ist im breiten Layout etwas breiter.
+- Breites Layout: Die Kaltwasser-Box nutzt dieselben Schriftgrößen wie die anderen Boxen.
+
 ## 1.0.3
 
 - Speicherdiagramm: Die Skala reicht jetzt von 5 K unter dem Mindest-Sollwert bis 5 K über dem Maximal-Sollwert

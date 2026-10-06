@@ -98,6 +98,31 @@ FIT_JS = """
 """
 
 
+SOFT_JS = """
+async ([states, left, layout]) => {
+  document.body.style.width = (layout === 'compact' ? '390' : '1100') + 'px';
+  const c = document.createElement('heizungsanlage-card');
+  c.setConfig({layout, entities: {softener_regeneration: 'sensor.soft_last', softener_salt: 'sensor.soft_salt', softener_remaining: 'sensor.soft_left'}});
+  document.body.appendChild(c);
+  const st = {...states,
+    'sensor.soft_last': {state: '2026-09-30T01:00:00+00:00', attributes: {device_class: 'timestamp'}},
+    'sensor.soft_salt': {state: '44', attributes: {unit_of_measurement: '%'}},
+    'sensor.soft_left': {state: String(left), attributes: {}}};
+  // wie in Home Assistant: native Formatierung liefert Datum und Uhrzeit
+  c.hass = {states: st, language: 'de', config: {time_zone: 'Europe/Berlin'}, callWS: async () => ({}),
+            formatEntityState: (s) => (s.attributes.device_class === 'timestamp' ? '30. September 2026 um 03:00' : s.state + (s.attributes.unit_of_measurement ? ' ' + s.attributes.unit_of_measurement : ''))};
+  if (layout === 'compact') c.shadowRoot.querySelector('[data-topic=softener]').dispatchEvent(new Event('click'));
+  await new Promise((r) => setTimeout(r, 100));
+  const r = c.shadowRoot;
+  const txt = (id) => { const n = r.getElementById(id), u = r.getElementById(id + '-u'); return n ? n.textContent + (u && u.textContent ? ' ' + u.textContent : '') : null; };
+  const fs = (id) => { const e = r.getElementById(id); return e ? getComputedStyle(e).fontSize : null; };
+  return {regen: txt('v-soft-regen'), salt: txt('v-soft-salt'), left: txt('v-soft-left'),
+          regenGrouped: !!r.getElementById('v-soft-regen').dataset.ug, leftGrouped: !!r.getElementById('v-soft-left').dataset.ug,
+          coldFont: fs('v-cold'), supplyFont: fs('v-supply')};
+}
+"""
+
+
 def main():
     from playwright.sync_api import sync_playwright
 
@@ -166,6 +191,17 @@ def main():
         check("fit_screen: false schaltet die Anpassung ab", not fit_off["fit"])
         check("screen_offset wird übernommen", "--fit-offset:80px" in fit_off32["offset"])
         check("Editor bietet fit_screen und screen_offset an", "fit_screen" in fit_default["names"] and "screen_offset" in fit_default["names"])
+        # Enthärtungs-Tafel: nur Datum (ohne Uhrzeit), Salz in %, Restbestand in Regenerationen
+        for layout in ("wide", "compact"):
+            r12 = pg3.evaluate(SOFT_JS, [states, 12, layout])
+            r1 = pg3.evaluate(SOFT_JS, [states, 1, layout])
+            check(f"Enthärtung ({layout}): Datum ohne Uhrzeit", r12["regen"] == "30.09.2026" and ":" not in r12["regen"])
+            check(f"Enthärtung ({layout}): Salz in Prozent", r12["salt"] == "44 %")
+            check(f"Enthärtung ({layout}): Restbestand „12 Regenerationen“", r12["left"] == "12 Regenerationen")
+            check(f"Enthärtung ({layout}): Singular bei 1 Regeneration", r1["left"] == "1 Regeneration")
+            check(f"Enthärtung ({layout}): Datum steht rechtsbündig außerhalb der Einheitenspalte", not r12["regenGrouped"] and r12["leftGrouped"])
+        wide = pg3.evaluate(SOFT_JS, [states, 12, "wide"])
+        check("Kaltwasser-Box hat dieselbe Schriftgröße wie die anderen Boxen (breit)", wide["coldFont"] is not None and wide["coldFont"] == wide["supplyFont"])
         check("Keine JavaScript-Fehler im Browser", not errs)
         if errs:
             print(errs)

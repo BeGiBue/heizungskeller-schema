@@ -8,7 +8,7 @@
  *   card:      type: custom:heizungsanlage-card   (Einstellungen über den visuellen Editor)
  */
 
-const CARD_VERSION = '1.0.3';
+const CARD_VERSION = '1.0.4';
 
 // Geräte-Grafiken (freigestellt, eingebettet – keine externen Dateien nötig)
 const IMG = {
@@ -96,8 +96,9 @@ const DEFAULTS = {
     water_total: null,
     water_today: null,
     // Optional (Box nur anzeigen, wenn eingetragen)
-    softener_regeneration: null,
+    softener_regeneration: null, // Zeitstempel der letzten Regeneration (angezeigt wird nur das Datum)
     softener_salt: null,
+    softener_remaining: null, // Restbestand in Regenerationen (Anzeige: „Noch ca. N Regenerationen“)
   },
 };
 
@@ -327,7 +328,7 @@ class HeizungsanlageCard extends HTMLElement {
         const yy = y + 64 + i * 32;
         s += `<g class="clk" data-entity="${r.ent || ent || ''}">
           <text class="s" x="${x + 14}" y="${yy}">${r.label}</text>
-          ${numUnit(r.id, gid, x + w - 14, yy)}</g>`;
+          ${r.plain ? `<text class="v" id="${r.id}" x="${x + w - 14}" y="${yy}" text-anchor="end">–</text>` : numUnit(r.id, gid, x + w - 14, yy)}</g>`;
       });
       return s + '</g>';
     };
@@ -346,9 +347,10 @@ class HeizungsanlageCard extends HTMLElement {
     const waterBox = infoBox(20, 912, 205, 'Wasserzähler', waterRows);
 
     // Tafel der Enthärtungsanlage (immer sichtbar, Werte nur wenn Entitäten eingetragen sind)
-    const softBox = infoBox(360, 912, 250, 'Enthärtungsanlage', [
-      { label: 'Regeneration', id: 'v-soft-regen', ent: E.softener_regeneration || '' },
+    const softBox = infoBox(360, 912, 290, 'Enthärtungsanlage', [
+      { label: 'Regeneration', id: 'v-soft-regen', ent: E.softener_regeneration || '', plain: true }, // Datum, keine Einheit
       { label: 'Salz %', id: 'v-soft-salt', ent: E.softener_salt || '' },
+      { label: 'Noch ca.', id: 'v-soft-left', ent: E.softener_remaining || '' },
     ]);
 
     // ---- Untere Leiste: Status (Kennzahlen) und Einstellungen ----
@@ -508,8 +510,8 @@ class HeizungsanlageCard extends HTMLElement {
   <!-- ================= Kaltwasser-Temperatur ================= -->
   ${E.water_temp ? `<g class="clk" data-entity="${E.water_temp}">
     <rect class="box" x="20" y="768" width="205" height="38" rx="12"/>
-    <text class="s" x="32" y="793" style="font-size:16px">Kaltwasser</text>
-    <text class="v" id="v-cold" x="213" y="793" text-anchor="end" style="font-size:17px">–</text></g>` : ''}
+    <text class="s" x="32" y="793">Kaltwasser</text>
+    <text class="v" id="v-cold" x="213" y="793" text-anchor="end">–</text></g>` : ''}
 
   <!-- ================= Verlauf Speichertemperatur ================= -->
   <g class="clk" data-entity="${E.tank_temp || ''}">
@@ -664,7 +666,7 @@ class HeizungsanlageCard extends HTMLElement {
       let t = tile(10, y, 580, h) + `<text class="h" x="24" y="${y + 30}">${title}</text>` + img(key, 590 - w2 - 14, y + 6, w2);
       rows.forEach((r, i) => {
         const yy = y + 84 + i * 30;
-        t += `<g class="clk" data-entity="${r[3] || ''}"><text class="s" x="24" y="${yy}">${r[0]}</text>${numUnit(r[1], 'it-' + title, 576, yy)}</g>`;
+        t += `<g class="clk" data-entity="${r[3] || ''}"><text class="s" x="24" y="${yy}">${r[0]}</text>${r[4] ? `<text class="v" id="${r[1]}" x="576" y="${yy}" text-anchor="end">–</text>` : numUnit(r[1], 'it-' + title, 576, yy)}</g>`;
       });
       return t;
     };
@@ -696,8 +698,8 @@ class HeizungsanlageCard extends HTMLElement {
       ph = 160;
       panel = infoTile(py, 160, 'Wasserzähler', [['Heute', 'v-water-today', 0, E.water_today], ['Stand', 'v-water-total', 0, E.water_total], ['Durchfluss', 'v-water-flow', 0, E.water_flow]], 'wm', 64);
     } else if (open === 'softener') {
-      ph = 130;
-      panel = infoTile(py, 130, 'Enthärtungsanlage', [['Regeneration', 'v-soft-regen', 0, E.softener_regeneration], ['Salz %', 'v-soft-salt', 0, E.softener_salt]], 'soft', 30);
+      ph = 160;
+      panel = infoTile(py, 160, 'Enthärtungsanlage', [['Regeneration', 'v-soft-regen', 0, E.softener_regeneration, true], ['Salz %', 'v-soft-salt', 0, E.softener_salt], ['Noch ca.', 'v-soft-left', 0, E.softener_remaining]], 'soft', 30);
     } else if (open === 'settings') {
       ph = 206;
       const set = [
@@ -772,6 +774,17 @@ class HeizungsanlageCard extends HTMLElement {
     return !!s && s.state === 'on';
   }
 
+  _dateOnly(d) {
+    const lang = (this._hass.locale && this._hass.locale.language) || this._hass.language || 'de';
+    const opts = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    const tz = this._hass.config && this._hass.config.time_zone;
+    try {
+      return d.toLocaleDateString(lang, tz ? { ...opts, timeZone: tz } : opts);
+    } catch (e) {
+      return d.toLocaleDateString(lang, opts);
+    }
+  }
+
   // Liter-Symbol: kleines, vom großen I unterscheidbares ℓ statt "L"/"l" (z. B. "177 L" → "177 ℓ", "12 l/h" → "12 ℓ/h")
   _liter(txt) {
     return String(txt).replace(/(^|[\s\d])[Ll](?=$|[\s/])/g, '$1ℓ');
@@ -784,6 +797,11 @@ class HeizungsanlageCard extends HTMLElement {
   _fmt0(id, max = 1, min = 0) {
     const s = this._st(id);
     if (!s || s.state === 'unavailable' || s.state === 'unknown') return '–';
+    // Zeitstempel (z. B. letzte Regeneration): nur das Datum anzeigen, ohne Uhrzeit
+    if ((s.attributes && s.attributes.device_class === 'timestamp') || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(s.state))) {
+      const d = new Date(s.state);
+      if (!isNaN(d.getTime())) return this._dateOnly(d);
+    }
     const n = parseFloat(s.state);
     if (isNaN(n)) return s.state;
     // Native Formatierung von Home Assistant (berücksichtigt Sprache, Einheit und die
@@ -942,6 +960,11 @@ class HeizungsanlageCard extends HTMLElement {
     setT('v-cold', this._fmt(E.water_temp, 1, 1));
     setT('v-soft-regen', this._fmt(E.softener_regeneration, 0));
     setT('v-soft-salt', this._fmt(E.softener_salt, 0));
+    const softLeft = E.softener_remaining ? this._num(E.softener_remaining) : null;
+    setT(
+      'v-soft-left',
+      softLeft != null ? `${Math.round(softLeft)} ${Math.round(softLeft) === 1 ? 'Regeneration' : 'Regenerationen'}` : '–'
+    );
     setT('v-set-comfort', this._fmt(E.comfort_temp, 1));
     setT('v-set-normal', this._fmt(E.normal_temp, 1));
     setT('v-set-reduced', this._fmt(E.reduced_temp, 1));
@@ -1256,8 +1279,9 @@ const EDITOR_I18N = {
       e_water_today: 'Wasser heute',
       e_water_flow: 'Durchfluss',
       e_water_temp: 'Kaltwassertemperatur',
-      e_softener_regeneration: 'Regeneration',
+      e_softener_regeneration: 'Letzte Regeneration',
       e_softener_salt: 'Salz (%)',
+      e_softener_remaining: 'Restbestand (Regenerationen)',
     },
     helpers: {
       fit_screen: 'Breites Layout: Das Schema wird so verkleinert, dass es ohne Scrollen auf den Bildschirm passt (z. B. iPad im Querformat).',
@@ -1271,7 +1295,8 @@ const EDITOR_I18N = {
       e_gas_today: 'Leer lassen = Tagesverbrauch aus dem Energie-Dashboard',
       e_water_total: 'Leer lassen = automatisch aus dem Energie-Dashboard',
       e_water_today: 'Leer lassen = Tagesverbrauch aus dem Energie-Dashboard',
-      e_softener_regeneration: 'Optional – ohne Entität zeigt die Tafel „–"',
+      e_softener_regeneration: 'Zeitstempel-Sensor; angezeigt wird nur das Datum. Optional – ohne Entität zeigt die Tafel „–"',
+      e_softener_remaining: 'Optional – zeigt „Noch ca. N Regenerationen“, z. B. „Restbestand Regenerationen“ der Integration Enthärtungsanlage',
       e_softener_salt: 'Optional – ohne Entität zeigt die Tafel „–"',
     },
   },
@@ -1322,8 +1347,9 @@ const EDITOR_I18N = {
       e_water_today: 'Water today',
       e_water_flow: 'Flow rate',
       e_water_temp: 'Cold water temperature',
-      e_softener_regeneration: 'Regeneration',
+      e_softener_regeneration: 'Last regeneration',
       e_softener_salt: 'Salt (%)',
+      e_softener_remaining: 'Remaining stock (regenerations)',
     },
     helpers: {
       fit_screen: 'Wide layout: shrinks the diagram so that it fits on the screen without scrolling (e.g. iPad in landscape).',
@@ -1337,7 +1363,8 @@ const EDITOR_I18N = {
       e_gas_today: 'Leave empty = daily usage from the Energy dashboard',
       e_water_total: 'Leave empty = automatic from the Energy dashboard',
       e_water_today: 'Leave empty = daily usage from the Energy dashboard',
-      e_softener_regeneration: 'Optional – without an entity the panel shows "–"',
+      e_softener_regeneration: 'Timestamp sensor; only the date is shown. Optional – without an entity the panel shows "–"',
+      e_softener_remaining: 'Optional – shows "Noch ca. N Regenerationen", e.g. "Remaining regenerations" of the water softener integration',
       e_softener_salt: 'Optional – without an entity the panel shows "–"',
     },
   },
@@ -1468,7 +1495,7 @@ class HeizungsanlageCardEditor extends HTMLElement {
       {
         type: 'expandable',
         title: t.sections.softener,
-        schema: [ent('softener_regeneration'), ent('softener_salt')],
+        schema: [ent('softener_regeneration'), ent('softener_salt'), ent('softener_remaining')],
       },
     ];
   }
