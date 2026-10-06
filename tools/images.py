@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gerätebilder aus der Karte herausziehen bzw. wieder einbetten.
 
-  python3 tools/images.py extract   -> assets/devices/<name>.webp (boiler, tank, rad, gas, wm, soft)
+  python3 tools/images.py extract   -> assets/devices/<name>.webp (boiler, tank, gas, wm, soft)
   python3 tools/images.py embed     -> schreibt die WebP-Dateien aus assets/devices/ wieder in `const IMG`
 
 Die Bilder sind als Data-URI in dist/heizungsanlage-card.js eingebettet (keine externen Dateien).

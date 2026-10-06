@@ -32,7 +32,7 @@ keine externen Requests). HACS lädt genau diese Datei.
 
 | Teil | Zweck |
 |---|---|
-| `CARD_VERSION`, `IMG` | Version; eingebettete Gerätebilder (WebP als Data-URI: boiler, tank, rad, gas, wm, soft) |
+| `CARD_VERSION`, `IMG` | Version; eingebettete Gerätebilder (WebP als Data-URI: boiler, tank, gas, wm, soft) |
 | `C`, `PUMP_INNER`, `DEFAULTS` | Leitungsfarben; gezeichnete Pumpe; Standard-Konfiguration inkl. aller Entitäten |
 | `class HeizungsanlageCard` | die Karte |
 | `connectedCallback` / `_useNarrow` | `ResizeObserver`: unter 700 px → kompaktes Layout (`layout: auto`) |
@@ -52,15 +52,15 @@ Einheiten ≈ Pixel bei Breite 1400 (breit) bzw. 600 (kompakt); die Grafik skali
 
 **Breit** (`_svgWide`): Alles außer Titel liegt in `<g transform="translate(0,-104)">`; die Koordinaten im Code
 sind die „alten" ohne diese Verschiebung (angezeigtes y = Codewert − 104).
-Anker: Kessel-Bild `x300 y400 w220`, Speicher `858,415 w130`, Heizkörper `1180,262 w170`, Gaszähler `40,445 w130`,
-Wasserzähler `22,823 w120`, Enthärtung `263,789 w80`. Pumpen (Achse y): Heizkreis `(689,290)`, Lade `(689,500)`,
+Anker: Kessel-Bild `341,402 w141`, Speicher `858,400 w130` (Unterkanten auf einer Höhe), Heizkörper (Vektor `radiator()`) `1180,262 w170`,
+Gaszähler `48,445 w113`, Wasserzähler `22,817 w120`, Enthärtung `278,789 w50.4`. Pumpen (Achse y): Heizkreis `(689,290)`, Lade `(689,500)`,
 Zirkulation `(1125,500)`. Leitungen: Heizkreis-Vorlauf y290, -Rücklauf y355; Ladekreis/Zirkulation Vorlauf y500,
-Rücklauf y600; Kaltwasser-Hauptleitung y860 mit Abzweigen bei x410 (Kessel, mittig), x923 (Speicher, mittig)
+Rücklauf y600; Kaltwasser-Hauptleitung y860 mit Abzweigen bei x411 (Kessel, mittig), x923 (Speicher, mittig)
 und x1284 (Hahn). Boxen: Brenner `434,686 290×152`, Speicher `950,686 312×152` (gleiche Oberkante/Höhe, Speicherbox
 ist Referenz), Gas `20,572`, Wasser `20,912`, Enthärtung `360,912`, Vorlauf-Feld `1190,392`, Kaltwasser-Feld
 `20,768`. Untere Leiste `y1080–1232` (Status- und Einstellungszeile).
 
-**Kompakt** (`_svgNarrow`): Schema in `translate(0,100)`: Kessel `30,170 w150`, Speicher `335,183 w100`, Heizkörper
+**Kompakt** (`_svgNarrow`): Schema in `translate(0,100)`: Kessel `46,171.5 w100`, Speicher `339,170.3 w92` (Unterkanten auf einer Höhe), Heizkörper
 `440,52 w140`, Pumpen `(300,80)`, `(257,245)`, `(488,245)`; Kaltwasser-Knoten `(250,450)`. Schaltflächen ab y730,
 Detailbereich ab y854. Die Höhe der `viewBox` hängt vom geöffneten Thema ab.
 
@@ -69,12 +69,12 @@ Detailbereich ab y854. Die Höhe der `viewBox` hängt vom geöffneten Thema ab.
 - **Animationen** hängen an der CSS-Klasse `on`: `<g class="line" id="ln-…">`, `<g class="pump" id="pm-…">`,
   `#boiler`, `#drops`. `_update()` setzt die Klasse anhand der Entitäten (Tabelle in `README.md`).
   Neue Animation = Element mit ID + CSS-Regel unter `.…on` + Zeile in `_update()`.
-- **Einheiten:** Wasserstand wird in m³ (2 Nachkommastellen), Durchfluss in ℓ/h angezeigt; `_convertTo(id, ziel)` rechnet
+- **Einheiten:** Wasserstand wird in m³ (2 Nachkommastellen), Durchfluss in l/h angezeigt; `_convertTo(id, ziel)` rechnet
   über `UNIT_FACTORS` aus der Einheit der Entität um (unbekannte Einheit → unveränderte Anzeige). Neue Einheit = Eintrag dort.
 - **Zahl + Einheit:** Werte in Boxen mit mehreren Zahlenwerten werden mit `numUnit(id, gruppe, x, y, style)` erzeugt (zwei
   Textelemente). `setT` trennt Text per `_splitUnit`, `_alignUnits()` richtet die Einheiten einer Gruppe linksbündig
   untereinander aus. Mit `numUnit(…, style, 'right')` endet stattdessen jeder Wert samt Einheit bündig am rechten Rand
-  (Wasserzähler- und Enthärtungs-Box). Liter immer mit **ℓ** (`_liter`), nie mit „L" oder „l".
+  (Wasserzähler- und Enthärtungs-Box). Liter immer als kleines **l** der Schriftart (`_liter` wandelt „L" um); kein Sonderzeichen ℓ.
 - **Texte setzen** über `setT(id, text)`; schreibt zusätzlich in das Element `<id>-d` (kompakte Ansicht zeigt
   einige Werte zugleich im Schema und im Detailbereich).
 - **Klickbar** ist alles mit `data-entity="…"` (öffnet den Home-Assistant-Dialog). Leere Entität = nicht klickbar.

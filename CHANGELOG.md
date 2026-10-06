@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.6
+
+- Neue Gerätegrafiken: Viessmann Vitocrossal 300 (Kessel), Vitocell 100-V (Speicher), Gaszähler, Wasserzähler und
+  Aqmos-Enthärtungsanlage. Flammen- und Füllfenster sind als Overlay aufgesetzt, die Unterkanten von Kessel und Speicher
+  liegen auf einer Höhe, die Leitungsanschlüsse wurden angepasst.
+- Heizkörper als Vektorgrafik im Stil des Wasserhahns; in der kompakten Ansicht ist der Rücklauf am Heizkörper angeschlossen.
+- Liter werden als normales „l“ angezeigt (statt ℓ).
+
 ## 1.0.5
 
 - Boxen „Wasserzähler“ und „Enthärtungsanlage“: Alle Messwerte stehen jetzt samt Einheit rechtsbündig (bündig am rechten

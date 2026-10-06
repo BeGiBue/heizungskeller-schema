@@ -84,12 +84,12 @@ Diese Werte sind in der Karte vorgesehen, aber ohne Entität zeigt die Anzeige �
   nutzt dieselben Schriftgrößen wie die anderen Boxen (Beschriftung 18, Wert 20).
 - Kaltwassertemperatur steht über dem Wasserzähler, die Box ist so breit wie die Wasserzähler-Box (breites Layout).
 - **Versionsnummer:** vom Nutzer auf **1.0.1** festgelegt (Zählung neu begonnen; vorherige interne Stände 3.x entfallen). Ab hier hochzählen.
-- **Liter-Symbol:** ℓ (U+2113) statt „L"/„l", damit es von einem großen I unterscheidbar ist (z. B. „177 ℓ", „12 ℓ/h").
+- **Liter-Einheit:** normales kleines „l" der Schriftart (kein ℓ), „L" wird zu „l" (z. B. „177 l", „12 l/h").
 - **Einheiten in Boxen mit mehreren Zahlenwerten** (Gas, Brenner-Werte, Speicher-Werte): Zahl rechtsbündig,
   Einheit linksbündig, alle Einheiten einer Box untereinander in einer Spalte (`numUnit`, `_alignUnits`).
 - **Wasserzähler- und Enthärtungs-Box** (seit 1.0.5, auf Wunsch des Nutzers): alle Messwerte samt Einheit **rechtsbündig**
   am rechten Rand, in beiden Layouts (`numUnit(…, 'right')`, `data-ua="right"`).
-- Wasserzähler: **Stand in m³ mit 2 Nachkommastellen**, **Durchfluss in ℓ/h**. Die Sensoren des Nutzers liefern Liter (`wasserzahler_total`) und m³/h (`wasserzahler_flow`); die Karte rechnet um (`UNIT_FACTORS`, `_convertTo`). „Heute" bleibt unverändert (Einheit aus dem Energie-Dashboard, z. B. L). Titel groß, oben möglichst wenig Leerraum.
+- Wasserzähler: **Stand in m³ mit 2 Nachkommastellen**, **Durchfluss in l/h**. Die Sensoren des Nutzers liefern Liter (`wasserzahler_total`) und m³/h (`wasserzahler_flow`); die Karte rechnet um (`UNIT_FACTORS`, `_convertTo`). „Heute" bleibt unverändert (Einheit aus dem Energie-Dashboard, z. B. L). Titel groß, oben möglichst wenig Leerraum.
 - Das Feld unter dem Heizkörper heißt **„Vorlauf"** (zeigt `supply_temp`; zwischenzeitlich „Heizkreis", auf Wunsch wieder „Vorlauf" in allen Karten und Boxen).
 - Alle Einstellungen laufen über den visuellen Editor von Home Assistant (`ha-form`).
 

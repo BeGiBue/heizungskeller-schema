@@ -178,8 +178,8 @@ def main():
             check(f"{tag}: Box heißt 'Vorlauf' (nicht 'Heizkreis')", res["vorlauf"])
             if cls == "wide":
                 check(f"{tag}: Wasserzähler-Stand in m³ mit 2 Nachkommastellen (L → m³)", res["wt"] == "539,95 m³")
-                check(f"{tag}: Durchfluss in ℓ/h (m³/h → ℓ/h)", res["wf"] == "12 ℓ/h")
-                check(f"{tag}: Liter-Symbol ℓ statt L", res["wh"] == "177 ℓ")
+                check(f"{tag}: Durchfluss in l/h (m³/h → l/h)", res["wf"] == "12 l/h")
+                check(f"{tag}: Liter-Einheit l statt L", res["wh"] == "177 l")
                 same = lambda a: len(set(a)) == 1 and a[0] is not None
                 near = lambda a: None not in a and max(a) - min(a) <= 1
                 check(f"{tag}: Wasserzähler-Box: alle Messwerte samt Einheit rechtsbündig", near(res["waterRight"]))

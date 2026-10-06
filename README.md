@@ -17,7 +17,7 @@ Gas- und Wasserzähler, Enthärtungsanlage – mit Live-Werten und Verläufen.
 - **Pumpen mit drehendem Flügelrad**, solange sie laufen.
 - **Brenner:** Flamme im Sichtfenster, Größe folgt der Modulation. Darunter ein 24-h-Graph mit Modulation und Kesseltemperatur (Y-Achse in °C für die Kesseltemperatur).
 - **Warmwasserspeicher:** Füllanzeige, 24-h-Verlauf mit Soll-Linie, zwei grauen Grenzlinien sowie Maximum, Istwert und Minimum. Die Skala reicht von 5 K unter dem Mindest-Sollwert bis 5 K über dem Maximal-Sollwert (`limit_offset`); die grauen Grenzlinien bilden Unter- und Obergrenze.
-- **Einheiten umgerechnet:** Der Wasserzähler zeigt den Stand in m³ mit zwei Nachkommastellen und den Durchfluss in ℓ/h, egal in welcher Einheit der Sensor liefert (L, m³; m³/h, l/min, l/h …). Liter werden mit dem Symbol ℓ geschrieben, damit es nicht mit einem großen I verwechselt wird.
+- **Einheiten umgerechnet:** Der Wasserzähler zeigt den Stand in m³ mit zwei Nachkommastellen und den Durchfluss in l/h, egal in welcher Einheit der Sensor liefert (L, m³; m³/h, l/min, l/h …).
 - **Einheiten linksbündig:** In Boxen mit mehreren Zahlenwerten stehen die Einheiten linksbündig untereinander, die Zahlen rechtsbündig davor.
   Ausnahme: In den Boxen „Wasserzähler“ und „Enthärtungsanlage“ stehen alle Messwerte samt Einheit rechtsbündig.
 - **Gas und Wasser aus dem Energie-Dashboard** (Stand und Tagesverbrauch), ohne zusätzliche Konfiguration.
